@@ -1,0 +1,62 @@
+# Java and Spring Boot related
+*.class
+*.jar
+*.war
+*.ear
+
+# Gradle related
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE-specific files
+/.idea/
+/*.iml
+*.ipr
+*.iws
+*.swp
+*.bak
+*.tmp
+*.log
+*.orig
+*.rej
+*.sublime-workspace
+*.sublime-project
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs and temporary files
+logs/
+*.log
+*.tmp
+*.lock
+*.pid
+hs_err_pid*
+
+# Dependency directories
+lib/
+node_modules/
+
+# Application-specific
+.env
+*.properties
+*.yaml
+*.yml
+
+# Package Files
+*.zip
+*.tar.gz
+*.7z
+*.rar
+
+# Testing related
+/test-output/
+**/test-results/
+**/test-reports/
+
+# Intellij Specific
+*.idea/

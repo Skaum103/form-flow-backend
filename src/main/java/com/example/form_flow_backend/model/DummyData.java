@@ -1,25 +1,28 @@
 package com.example.form_flow_backend.model;
 
+import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class DummyData {
+    @Id
+    @NotNull
+    private int id;
+
+    @NotNull
+    @Size(min = 1, max = 20)
     private String name;
+
+    @NotNull
+    @Min(1)
     private int age;
-
-    // Getters and Setters
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
 
     @Override
     public String toString() {

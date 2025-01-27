@@ -20,6 +20,7 @@ public class HomeController {
 
     @Operation(summary = "Dummy - Receive a GET request")
     @ApiResponse(responseCode = "200", description = "Successful operation")
+    @ApiResponse(responseCode = "404", description = "Resource not found")
     @GetMapping("/dummy_get")
     public String receiveGet() {
         return "Received GET request!";
@@ -27,6 +28,8 @@ public class HomeController {
 
     @Operation(summary = "Dummy - Receive a POST request")
     @ApiResponse(responseCode = "200", description = "Successful operation")
+    @ApiResponse(responseCode = "404", description = "Resource not found")
+    @ApiResponse(responseCode = "400", description = "Bad request")
     @PostMapping("/dummy_post")
     public String receivePost(@RequestBody DummyData data) {
         return "Received POST request with data: " + data;

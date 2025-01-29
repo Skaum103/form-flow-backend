@@ -11,7 +11,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: MySpringBootLambda
-      Handler: org.springframework.boot.loader.JarLauncher
+      Handler: com.example.form_flow_backend.FormFlowBackendApplication::handleRequest
       Runtime: java21
       MemorySize: 1024
       Timeout: 30

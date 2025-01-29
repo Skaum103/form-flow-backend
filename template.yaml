@@ -19,6 +19,7 @@ Resources:
       Environment:
         Variables:
           DB_SECRET_NAME: !Ref DBSecretName
+          API_GATEWAY_URL: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DBSecretName}"
@@ -28,3 +29,5 @@ Resources:
           Properties:
             Path: /{proxy+}
             Method: ANY
+
+

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -15,9 +16,11 @@ public class OpenAPIConfiguration {
 
     @Bean
     public OpenAPI defineOpenApi() {
+        String baseUrl = System.getenv("API_GATEWAY_URL"); // Get API Gateway URL from environment variables
+
         Server server = new Server();
-        server.setUrl("https://7inj6cbj3i.execute-api.us-east-1.amazonaws.com/Prod");
-        server.setDescription("Development");
+        server.setUrl(baseUrl != null ? baseUrl : "http://localhost:8080"); // Use API Gateway URL if available
+        server.setDescription("API Gateway Base URL");
 
         Contact myContact = new Contact();
         myContact.setName("Meng Xin");
@@ -28,6 +31,7 @@ public class OpenAPIConfiguration {
                 .version("1.0")
                 .description("This API exposes endpoints to manage forms.")
                 .contact(myContact);
-        return new OpenAPI().info(information).servers(List.of(server));
+
+        return new OpenAPI().info(information).servers(Collections.singletonList(server));
     }
 }

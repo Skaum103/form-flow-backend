@@ -33,9 +33,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
 
-      - name: Verify AWS SAM CLI Version (Preinstalled)
-        run: sam --version  # Ensures AWS SAM CLI is available
-
       - name: Build and Deploy with AWS SAM
         run: |
           sam build

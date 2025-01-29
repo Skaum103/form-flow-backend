@@ -5,9 +5,9 @@ Resources:
   SpringBootLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: formFlowLambda
+      FunctionName: MySpringBootLambda
       Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
-      Runtime: java21  # AWS Lambda does not support Java 23 yet, use Java 21
+      Runtime: java21
       MemorySize: 1024
       Timeout: 30
       CodeUri: .

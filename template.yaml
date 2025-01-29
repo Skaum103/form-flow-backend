@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  DBSecretName:
+    Type: String
+    Description: "AWS Secrets Manager secret name for database credentials"
+
 Resources:
   SpringBootLambdaFunction:
     Type: AWS::Serverless::Function
@@ -16,15 +21,10 @@ Resources:
           DB_SECRET_NAME: !Ref DBSecretName
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DB_SECRET_NAME}"
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DBSecretName}"
       Events:
         ApiGateway:
           Type: Api
           Properties:
             Path: /{proxy+}
             Method: ANY
-
-Parameters:
-  DBSecretName:
-    Type: String
-    Description: "AWS Secrets Manager secret name for database credentials"

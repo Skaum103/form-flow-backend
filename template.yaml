@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  SpringBootLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: formFlowLambda
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      Runtime: java21  # AWS Lambda does not support Java 23 yet, use Java 21
+      MemorySize: 1024
+      Timeout: 30
+      CodeUri: .
+      Environment:
+        Variables:
+          DB_SECRET_NAME: !Ref DBSecret
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DB_SECRET_NAME}"
+      Events:
+        ApiGateway:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+Parameters:
+  DBSecretName:
+    Type: String
+    Description: "AWS Secrets Manager secret name for database credentials"

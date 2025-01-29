@@ -12,6 +12,29 @@ Resources:
     Properties:
       Name: FormFlowApi
       StageName: Prod
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          title: "Form Flow API"
+          description: "API Gateway for Form Flow Backend"
+          version: "1.0"
+        schemes:
+          - "https"
+        paths:
+          /{proxy+}:
+            x-amazon-apigateway-any-method:
+              produces:
+                - "application/json"
+              parameters:
+                - name: "proxy"
+                  in: "path"
+                  required: true
+                  type: "string"
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SpringBootLambdaFunction.Arn}/invocations"
+                httpMethod: "POST"
+                type: "aws_proxy"
 
   SpringBootLambdaFunction:
     Type: AWS::Serverless::Function

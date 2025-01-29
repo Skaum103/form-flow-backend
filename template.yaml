@@ -11,7 +11,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: MySpringBootLambda
-      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      Handler: org.springframework.boot.loader.JarLauncher
       Runtime: java21
       MemorySize: 1024
       Timeout: 30

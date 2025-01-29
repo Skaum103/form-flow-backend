@@ -16,10 +16,8 @@ public class OpenAPIConfiguration {
 
     @Bean
     public OpenAPI defineOpenApi() {
-        String baseUrl = System.getenv("API_GATEWAY_URL"); // Get API Gateway URL from environment variables
-
         Server server = new Server();
-        server.setUrl(baseUrl != null ? baseUrl : "http://localhost:8080"); // Use API Gateway URL if available
+        server.setUrl("https://7inj6cbj3i.execute-api.us-east-1.amazonaws.com/Prod"); // Use API Gateway URL if available
         server.setDescription("API Gateway Base URL");
 
         Contact myContact = new Contact();

@@ -7,6 +7,12 @@ Parameters:
     Description: "AWS Secrets Manager secret name for database credentials"
 
 Resources:
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: FormFlowApi
+      StageName: Prod
+
   SpringBootLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:

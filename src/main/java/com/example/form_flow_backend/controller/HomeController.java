@@ -13,7 +13,7 @@ public class HomeController {
 
     @Operation(summary = "Greet the user")
     @ApiResponse(responseCode = "200", description = "Successful operation")
-    @GetMapping("/")
+    @GetMapping("/home")
     public String greet() {
         return "Hello, World!";
     }

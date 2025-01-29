@@ -16,7 +16,7 @@ public class OpenAPIConfiguration {
     @Bean
     public OpenAPI defineOpenApi() {
         Server server = new Server();
-        server.setUrl("http://localhost:8080");
+        server.setUrl("https://7inj6cbj3i.execute-api.us-east-1.amazonaws.com/Prod");
         server.setDescription("Development");
 
         Contact myContact = new Contact();

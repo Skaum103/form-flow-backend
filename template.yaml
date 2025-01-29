@@ -13,7 +13,7 @@ Resources:
       CodeUri: .
       Environment:
         Variables:
-          DB_SECRET_NAME: !Ref DBSecret
+          DB_SECRET_NAME: !Ref DBSecretName
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DB_SECRET_NAME}"

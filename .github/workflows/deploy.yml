@@ -3,15 +3,11 @@ name: Deploy to AWS Elastic Beanstalk
 on:
   push:
     branches:
-      - main  # Change to your deployment branch
-
-permissions:
-  id-token: write
-  contents: read
+      - main
 
 jobs:
   deploy:
-    name: Build and Deploy to AWS EB
+    name: Build and Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -28,15 +24,18 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build JAR with Gradle
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean bootJar -x test
+
+      - name: Debug Build Output
+        run: ls -R build/libs
 
       - name: Generate Deployment Package
         run: |
           mkdir deploy
-          cp build/libs/*.jar deploy/application.jar
+          cp build/libs/*.jar deploy/
           cd deploy
           zip -r deploy.zip ./*
-
+          
       - name: Install AWS CLI
         run: |
           sudo apt-get update -y

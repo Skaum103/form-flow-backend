@@ -3,7 +3,7 @@ name: Deploy to AWS Elastic Beanstalk
 on:
   push:
     branches:
-      - main
+      - main  # Adjust if needed
 
 jobs:
   deploy:
@@ -42,12 +42,16 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set region ${{ secrets.AWS_REGION }}
 
+      - name: Upload Deployment Package to S3
+        run: |
+          aws s3 cp deploy/deploy.zip s3://form-flow-bucket/deploy/deploy.zip
+
       - name: Deploy to Elastic Beanstalk
         run: |
           aws elasticbeanstalk create-application-version \
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \
             --version-label "v-${{ github.run_number }}" \
-            --source-bundle S3Bucket="elasticbeanstalk-${{ secrets.AWS_REGION }}-YOUR-ACCOUNT-ID",S3Key="deploy/deploy.zip"
+            --source-bundle S3Bucket="form-flow-bucket",S3Key="deploy/deploy.zip"
           
           aws elasticbeanstalk update-environment \
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \

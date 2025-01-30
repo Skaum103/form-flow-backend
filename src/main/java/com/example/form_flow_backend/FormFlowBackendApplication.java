@@ -11,9 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class FormFlowBackendApplication {
 
 	public static void main(String[] args) throws JSONException {
-		String deployMode ="local";
+		System.setProperty("DEPLOY_MODE", "local");
 
-		if (deployMode.equals("local")) {
+		if (System.getProperty("DEPLOY_MODE").equals("local")) {
 			System.setProperty("DB_USERNAME", "admin");
 			System.setProperty("DB_PASSWORD", "password");
 		} else {

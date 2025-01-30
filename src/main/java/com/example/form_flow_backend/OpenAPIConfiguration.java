@@ -16,7 +16,12 @@ public class OpenAPIConfiguration {
     @Bean
     public OpenAPI defineOpenApi() {
         Server server = new Server();
-        server.setUrl("http://form-flow.us-east-1.elasticbeanstalk.com/"); // Use API Gateway URL if available
+
+        if (System.getProperty("DEPLOY_MODE").equals("local"))
+            server.setUrl("http://localhost:8080/");
+        else {
+            server.setUrl("http://form-flow.us-east-1.elasticbeanstalk.com/");
+        }
         server.setDescription("API Gateway Base URL");
 
         Contact myContact = new Contact();

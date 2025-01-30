@@ -12,7 +12,7 @@ public class SecretManagerUtil {
     public static JSONObject getSecret(String secretName) throws JSONException {
 
         SecretsManagerClient client = SecretsManagerClient.builder()
-                .region(Region.of("us-east-1"))
+                .region(Region.of(System.getenv("AWS_REGION")))
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
 

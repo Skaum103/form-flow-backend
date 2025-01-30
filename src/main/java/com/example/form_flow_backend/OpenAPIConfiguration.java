@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Collections;
-import java.util.List;
 
 @Configuration
 public class OpenAPIConfiguration {
@@ -17,7 +16,7 @@ public class OpenAPIConfiguration {
     @Bean
     public OpenAPI defineOpenApi() {
         Server server = new Server();
-        server.setUrl("https://7inj6cbj3i.execute-api.us-east-1.amazonaws.com/Prod"); // Use API Gateway URL if available
+        server.setUrl("http://form-flow.us-east-1.elasticbeanstalk.com/"); // Use API Gateway URL if available
         server.setDescription("API Gateway Base URL");
 
         Contact myContact = new Contact();

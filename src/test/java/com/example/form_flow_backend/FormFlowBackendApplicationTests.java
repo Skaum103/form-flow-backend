@@ -1,13 +1,27 @@
 package com.example.form_flow_backend;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.ResponseEntity;
+
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class FormFlowBackendApplicationTests {
 
-	@Test
-	void contextLoads() {
+	@BeforeAll
+    static void setUp() {
+		System.setProperty("DEPLOY_MODE","local");
 	}
 
+	@Test
+	void contextLoads() {
+
+	}
 }

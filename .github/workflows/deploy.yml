@@ -6,8 +6,8 @@ on:
       - main  # Adjust if needed
 
 jobs:
-  deploy:
-    name: Build and Deploy
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -26,9 +26,11 @@ jobs:
       - name: Build JAR with Gradle
         run: ./gradlew clean bootJar -x test
 
-      - name: Debug Build Output
-        run: ls -R build/libs
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
 
+    steps:
       - name: Generate Deployment Package
         run: |
           mkdir deploy

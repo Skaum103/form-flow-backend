@@ -44,14 +44,14 @@ jobs:
 
       - name: Upload Deployment Package to S3
         run: |
-          aws s3 cp deploy/deploy.zip s3://form-flow-bucket/deploy/deploy.zip
+          aws s3 cp deploy/deploy.zip s3://form-flow-bucket/deploy/backend/deploy.zip
 
       - name: Deploy to Elastic Beanstalk
         run: |
           aws elasticbeanstalk create-application-version \
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \
             --version-label "v-${{ github.run_number }}" \
-            --source-bundle S3Bucket="form-flow-bucket",S3Key="deploy/deploy.zip"
+            --source-bundle S3Bucket="form-flow-bucket",S3Key="deploy/backend/deploy.zip"
           
           aws elasticbeanstalk update-environment \
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \

@@ -1,4 +1,76 @@
 package com.example.form_flow_backend.service;
 
+import com.example.form_flow_backend.model.User;
+import com.example.form_flow_backend.repository.UserRepository;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
+import java.util.Optional;
+
+@Service
 public class UserManagementService {
+
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public UserManagementService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Returns the current session details.
+     */
+    public String getSessionDetails(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            return "User is logged in as: " + authentication.getName();
+        }
+        return "No active session";
+    }
+
+    /**
+     * Registers a new user with encrypted password.
+     */
+    public User registerUser(User user) {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword())); // Encrypt password
+        return userRepository.save(user);
+    }
+
+    /**
+     * Deletes a user if they exist.
+     */
+    public String deleteUser(String username) {
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        if (existingUser.isPresent()) {
+            userRepository.delete(existingUser.get());
+            return "User deleted successfully";
+        }
+        return "User not found";
+    }
+
+
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        return username -> {
+            return userRepository.findByUsername(username)
+                    .map(user -> {
+                        return org.springframework.security.core.userdetails.User.builder()
+                                .username(user.getUsername())
+                                .password(user.getPassword()) // Ensure password is hashed
+                                .roles("USER")
+                                .build();
+                    })
+                    .orElseThrow(() -> {
+                        return new RuntimeException("User not found");
+                    });
+        };
+    }
 }

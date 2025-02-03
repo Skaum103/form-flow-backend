@@ -14,8 +14,8 @@ public class FormFlowBackendApplication {
 		System.setProperty("DEPLOY_MODE", "local");
 
 		if (System.getProperty("DEPLOY_MODE").equals("local")) {
-			System.setProperty("DB_USERNAME", "admin");
-			System.setProperty("DB_PASSWORD", "password");
+			System.setProperty("DB_USERNAME", "skaum");
+			System.setProperty("DB_PASSWORD", "ECE651-mengxin");
 		} else {
 			JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
 			System.setProperty("DB_USERNAME", secret.getString("username"));

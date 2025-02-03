@@ -1,35 +1,24 @@
 package com.example.form_flow_backend.model;
 
-import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.*;
 
+@Entity
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(name = "users")
 public class User {
     @Id
-    @NotNull
-    private int id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @NotNull
-    @Size(min = 1, max = 20)
+    @Column(unique = true, nullable = false)
     private String username;
 
-    @NotNull
-    @Size(min = 1, max = 20)
+    @Column(unique = true, nullable = false)
     private String email;
 
-    @NotNull
-    @Size(min = 1, max = 20)
+    @Column(nullable = false)
     private String password;
-
-    @Override
-    public String toString() {
-        return "User{name='" + username + "}";
-    }
 }

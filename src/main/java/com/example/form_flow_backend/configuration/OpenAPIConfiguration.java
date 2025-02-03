@@ -1,4 +1,4 @@
-package com.example.form_flow_backend;
+package com.example.form_flow_backend.configuration;
 
 
 import io.swagger.v3.oas.models.OpenAPI;

@@ -20,6 +20,13 @@ class FormFlowBackendApplicationTests {
 	@BeforeAll
     static void setUp() {
 		System.setProperty("DEPLOY_MODE", "cloud");
+
+		if (System.getProperty("DEPLOY_MODE").equals("local")) {
+		} else {
+			JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
+			System.setProperty("DB_USERNAME", secret.getString("username"));
+			System.setProperty("DB_PASSWORD", secret.getString("password"));
+		}
 	}
 
 	@Test

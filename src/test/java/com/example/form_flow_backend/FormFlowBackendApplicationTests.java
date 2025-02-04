@@ -17,11 +17,10 @@ class FormFlowBackendApplicationTests {
 
 	@BeforeAll
     static void setUp() {
-		System.setProperty("DEPLOY_MODE","local");
+		System.setProperty("DEPLOY_MODE", "cloud");
 	}
 
 	@Test
 	void contextLoads() {
-
 	}
 }

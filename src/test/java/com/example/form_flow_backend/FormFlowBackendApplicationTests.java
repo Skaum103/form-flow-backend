@@ -17,5 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class FormFlowBackendApplicationTests {
 
+    @BeforeAll
+    static void setup() {
+		System.getProperty("DB_USERNAME");
+        System.getProperty("DB_PASSWORD");
+	}
+
+    @Test
+    void contextLoads() {
+	}
+
 
 }

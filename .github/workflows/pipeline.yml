@@ -72,12 +72,14 @@ jobs:
 
       - name: Deploy to Elastic Beanstalk
         run: |
+          VERSION_LABEL="v-$(date +%Y%m%d%H%M%S)"
+          
           aws elasticbeanstalk create-application-version \
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \
-            --version-label "v-$(date +%Y%m%d%H%M%S)" \
+            --version-label "$VERSION_LABEL" \
             --source-bundle S3Bucket="form-flow-bucket",S3Key="deploy/backend/deploy.zip"
           
           aws elasticbeanstalk update-environment \
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \
             --environment-name ${{ secrets.EB_ENVIRONMENT_NAME }} \
-            --version-label "v-$(date +%Y%m%d%H%M%S)" \
+            --version-label "$VERSION_LABEL" \

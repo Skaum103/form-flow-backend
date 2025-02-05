@@ -28,7 +28,6 @@ class FormFlowBackendApplicationTests {
     @BeforeAll
     static void setup() {
         System.setProperty("DEPLOY_MODE", "cloud");
-        System.setProperty("AWS_REGION", "us-east-1");
         JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
         System.setProperty("DB_USERNAME", secret.getString("username"));
         System.setProperty("DB_PASSWORD", secret.getString("password"));

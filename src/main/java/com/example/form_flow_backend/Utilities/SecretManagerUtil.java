@@ -10,9 +10,13 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 
 public class SecretManagerUtil {
     public static JSONObject getSecret(String secretName) throws JSONException {
+        String region = System.getenv("AWS_REGION");
+        if (region == null) {
+            region = "us-east-1";
+        }
 
         SecretsManagerClient client = SecretsManagerClient.builder()
-                .region(Region.of(System.getenv("AWS_REGION")))
+                .region(Region.of(region))
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
 

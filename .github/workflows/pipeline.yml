@@ -12,6 +12,9 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    env:
+      DB_SECRET_NAME: ${{ secrets.DB_SECRET_NAME }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -22,6 +25,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
           cache: gradle
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION }}
 
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew

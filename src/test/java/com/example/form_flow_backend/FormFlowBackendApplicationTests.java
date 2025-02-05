@@ -19,6 +19,7 @@ class FormFlowBackendApplicationTests {
 
     @BeforeAll
     static void setup() {
+        System.setProperty("DEPLOY_MODE", "cloud");
 		System.getProperty("DB_USERNAME");
         System.getProperty("DB_PASSWORD");
 	}

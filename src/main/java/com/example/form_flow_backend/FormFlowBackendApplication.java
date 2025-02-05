@@ -13,6 +13,7 @@ public class FormFlowBackendApplication {
 	public static void main(String[] args) throws JSONException {
 		System.setProperty("DEPLOY_MODE", "cloud");
 
+
 		if (System.getProperty("DEPLOY_MODE").equals("local")) {
 		} else {
 			JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));

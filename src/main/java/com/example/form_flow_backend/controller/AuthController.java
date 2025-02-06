@@ -2,12 +2,14 @@ package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.model.User;
 import com.example.form_flow_backend.service.UserManagementService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
@@ -32,7 +34,11 @@ public class AuthController {
      */
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
-        return userManagementService.registerUser(user);
+        try {
+            return userManagementService.registerUser(user);
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     /**

@@ -3,6 +3,8 @@ package com.example.form_flow_backend.service;
 import com.example.form_flow_backend.model.User;
 import com.example.form_flow_backend.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -40,6 +42,11 @@ public class UserManagementService {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("Username already exists");
         }
+
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+
         user.setPassword(passwordEncoder.encode(user.getPassword())); // Encrypt password
         return userRepository.save(user);
     }

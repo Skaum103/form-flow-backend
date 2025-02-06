@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class FormFlowBackendApplication {
 
 	public static void main(String[] args) throws JSONException {
-		System.setProperty("DEPLOY_MODE", "cloud");
+		System.setProperty("DEPLOY_MODE", "local");
 
 
 		if (System.getProperty("DEPLOY_MODE").equals("local")) {

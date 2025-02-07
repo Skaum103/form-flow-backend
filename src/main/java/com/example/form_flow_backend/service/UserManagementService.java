@@ -7,8 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -21,10 +23,11 @@ import java.util.Optional;
 public class UserManagementService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
-    public UserManagementService(UserRepository userRepository) {
+    public UserManagementService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -37,21 +40,6 @@ public class UserManagementService {
         return "No active session";
     }
 
-    /**
-     * Registers a new user with encrypted password.
-     */
-//    public User registerUser(User user) {
-//        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-//            throw new RuntimeException("Username already exists");
-//        }
-//
-//        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-//            throw new RuntimeException("Email already exists");
-//        }
-//
-//        user.setPassword(passwordEncoder.encode(user.getPassword())); // Encrypt password
-//        return userRepository.save(user);
-//    }
     public ResponseEntity<Map<String, Object>> registerUser(User user) {
         Map<String, Object> response = new HashMap<>();
 
@@ -91,18 +79,13 @@ public class UserManagementService {
 
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> {
-            return userRepository.findByUsername(username)
-                    .map(user -> {
-                        return org.springframework.security.core.userdetails.User.builder()
-                                .username(user.getUsername())
-                                .password(user.getPassword()) // Ensure password is hashed
-                                .roles("USER")
-                                .build();
-                    })
-                    .orElseThrow(() -> {
-                        return new RuntimeException("User not found");
-                    });
-        };
+        return username -> userRepository.findByUsername(username)
+                .map(user -> org.springframework.security.core.userdetails.User.builder()
+                        .username(user.getUsername())
+                        .password(user.getPassword()) // BCrypt 加密后的密码
+                        .roles("USER")
+                        .build()
+                )
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 }

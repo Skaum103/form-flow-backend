@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -38,17 +40,40 @@ public class UserManagementService {
     /**
      * Registers a new user with encrypted password.
      */
-    public User registerUser(User user) {
+//    public User registerUser(User user) {
+//        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+//            throw new RuntimeException("Username already exists");
+//        }
+//
+//        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+//            throw new RuntimeException("Email already exists");
+//        }
+//
+//        user.setPassword(passwordEncoder.encode(user.getPassword())); // Encrypt password
+//        return userRepository.save(user);
+//    }
+    public ResponseEntity<Map<String, Object>> registerUser(User user) {
+        Map<String, Object> response = new HashMap<>();
+
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("Username already exists");
+            response.put("success", false);
+            response.put("message", "Username already exists");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            response.put("success", false);
+            response.put("message", "Email already exists");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword())); // Encrypt password
-        return userRepository.save(user);
+        // 加密密码
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+
+        response.put("success", true);
+        response.put("message", "User registered successfully");
+        return ResponseEntity.ok(response);
     }
 
     /**

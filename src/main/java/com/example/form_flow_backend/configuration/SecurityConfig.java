@@ -16,6 +16,8 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 
 @Configuration
@@ -28,14 +30,15 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)  // Disable CSRF for testing (enable in production with CSRF token)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register","/auth/login", "/auth/logout",
-                                "/v3/**","/swagger-ui/**").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout",
+                                "/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .defaultSuccessUrl("/home", true)
                         .permitAll()
                 )
+
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
@@ -52,3 +55,5 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(); // Ensure login passwords are hashed
     }
 }
+
+

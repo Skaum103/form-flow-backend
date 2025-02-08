@@ -2,6 +2,8 @@ package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.model.User;
 import com.example.form_flow_backend.service.UserManagementService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +32,15 @@ public class AuthController {
     @GetMapping("/session")
     public String getSession(Authentication authentication) {
         return userManagementService.getSessionDetails(authentication);
+    }
+    
+
+    @GetMapping("/login")
+    @Operation(summary = "Login the user")
+    @ApiResponse(responseCode = "200", description = "Login success, will also return a session cookie")
+    @ApiResponse(responseCode = "403", description = "Credentials not correct")
+    public Object login(@RequestBody String username, @RequestBody String password) {
+        return null;
     }
 
     /**

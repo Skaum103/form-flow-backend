@@ -19,12 +19,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Service for managing user operations.
+ * English comment: Provides methods for user session handling, registration, and deletion.
+ */
 @Service
 public class UserManagementService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Constructor for dependency injection.
+     *
+     * @param userRepository  the repository for user data
+     * @param passwordEncoder the encoder for user passwords
+     */
     public UserManagementService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -32,6 +42,10 @@ public class UserManagementService {
 
     /**
      * Returns the current session details.
+     * English comment: Retrieves session details based on the current authentication context.
+     *
+     * @param authentication the current authentication object
+     * @return session details as a String
      */
     public String getSessionDetails(Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
@@ -40,6 +54,13 @@ public class UserManagementService {
         return "No active session";
     }
 
+    /**
+     * Registers a new user.
+     * English comment: Validates and registers a user if the username and email are not already in use.
+     *
+     * @param user the user to register
+     * @return a ResponseEntity containing the result of the registration
+     */
     public ResponseEntity<Map<String, Object>> registerUser(User user) {
         Map<String, Object> response = new HashMap<>();
 
@@ -55,7 +76,7 @@ public class UserManagementService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // 加密密码
+        // Encrypt password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 
@@ -66,6 +87,10 @@ public class UserManagementService {
 
     /**
      * Deletes a user if they exist.
+     * English comment: Removes a user identified by username.
+     *
+     * @param username the username of the user to delete
+     * @return a message indicating the result of the deletion
      */
     public String deleteUser(String username) {
         Optional<User> existingUser = userRepository.findByUsername(username);
@@ -76,13 +101,19 @@ public class UserManagementService {
         return "User not found";
     }
 
-
+    /**
+     * Configures the UserDetailsService bean.
+     * English comment: Provides a UserDetailsService for authentication using user repository.
+     *
+     * @param userRepository the repository for user data
+     * @return a UserDetailsService instance
+     */
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> userRepository.findByUsername(username)
                 .map(user -> org.springframework.security.core.userdetails.User.builder()
                         .username(user.getUsername())
-                        .password(user.getPassword()) // BCrypt 加密后的密码
+                        .password(user.getPassword()) // BCrypt hashed password
                         .roles("USER")
                         .build()
                 )

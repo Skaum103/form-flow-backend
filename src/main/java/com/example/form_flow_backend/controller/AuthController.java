@@ -22,23 +22,28 @@ public class AuthController {
 
     private final UserManagementService userManagementService;
 
+    // Constructor injection for UserManagementService
     public AuthController(UserManagementService userManagementService) {
         this.userManagementService = userManagementService;
     }
 
     /**
      * Retrieves session details.
+     * English comment: Returns details of the current session.
      */
     @GetMapping("/session")
     public String getSession(Authentication authentication) {
         return userManagementService.getSessionDetails(authentication);
     }
-    
 
+    /**
+     * Login endpoint.
+     * English comment: This method handles login requests but currently returns null.
+     */
     @GetMapping("/login")
     @Operation(summary = "Login the user")
     @ApiResponse(responseCode = "200", description = "Login success, will also return a session cookie")
-    @ApiResponse(responseCode = "403", description = "Credentials not correct")
+    @ApiResponse(responseCode = "401", description = "Credentials not correct")
     public Object login(@RequestBody String username, @RequestBody String password) {
         return null;
     }
@@ -46,22 +51,14 @@ public class AuthController {
     /**
      * Registers a new user.
      */
-//    @PostMapping("/register")
-//    public User registerUser(@RequestBody User user) {
-//        try {
-//            return userManagementService.registerUser(user);
-//        } catch (RuntimeException e) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-//        }
-//    }
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> registerUser(@RequestBody User user) {
         return userManagementService.registerUser(user);
     }
 
-
     /**
      * Deletes a user by username.
+     * English comment: Deletes the user using the provided username.
      */
     @PostMapping("/delete")
     public String deleteUser(@RequestBody User user) {

@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Represents a user in the system.
+ * English comment: Model class for user entity.
+ */
 @Entity
 @Getter
 @Setter

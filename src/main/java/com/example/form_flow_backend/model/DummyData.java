@@ -7,11 +7,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 
+/**
+ * Represents dummy data for testing purposes.
+ * English comment: Model class for dummy data.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class DummyData {
+
     @Id
     @NotNull
     private int id;

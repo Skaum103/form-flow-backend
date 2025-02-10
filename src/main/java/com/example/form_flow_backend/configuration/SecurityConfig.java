@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginProcessingUrl("/login")
+                        .loginProcessingUrl("/auth/login")
                         .successHandler((request, response, authentication) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             String sessionId = request.getSession().getId();
@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
+                        .logoutUrl("/auth/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write(

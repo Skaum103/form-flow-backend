@@ -3,6 +3,7 @@ package com.example.form_flow_backend.controller;
 import com.example.form_flow_backend.model.User;
 import com.example.form_flow_backend.service.UserManagementService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,15 +39,28 @@ public class AuthController {
 
     /**
      * Login endpoint.
-     * English comment: This method handles login requests but currently returns null.
+     * This method handles login requests but currently returns null.
      */
-    @GetMapping("/login")
+    @PostMapping("/login")
     @Operation(summary = "Login the user")
     @ApiResponse(responseCode = "200", description = "Login success, will also return a session cookie")
     @ApiResponse(responseCode = "401", description = "Credentials not correct")
-    public Object login(@RequestBody String username, @RequestBody String password) {
-        return null;
+    public String login(@RequestBody String username, @RequestBody String password) {
+        return "Session";
     }
+
+
+    /**
+     * Logout endpoint.
+     * This method handles logout requests but currently returns null.
+     */
+    @PostMapping("/logout")
+    @Operation(summary = "Login the user")
+    @ApiResponse(responseCode = "200", description = "Logout success, will deicard the session")
+    public String logout() {
+        return "Logout success";
+    }
+
 
     /**
      * Registers a new user.

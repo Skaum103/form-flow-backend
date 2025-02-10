@@ -21,18 +21,21 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class FormFlowBackendApplicationTests {
 
-    private static final Logger logger = LoggerFactory.getLogger(FormFlowBackendApplicationTests.class);
     @Value("${spring.datasource.url:NOT_SET}")
     private static String datasourceUrl;
 
     @BeforeAll
     static void setup() {
         System.setProperty("DEPLOY_MODE", "cloud");
-        JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
-        System.setProperty("DB_USERNAME", secret.getString("username"));
-        System.setProperty("DB_PASSWORD", secret.getString("password"));
-
-	}
+        if (System.getProperty("DEPLOY_MODE").equals("local")) {
+            // Local deployment; no action needed.
+        } else {
+            // Retrieve database credentials from secret manager.
+            JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
+            System.setProperty("DB_USERNAME", secret.getString("username"));
+            System.setProperty("DB_PASSWORD", secret.getString("password"));
+        }
+    }
 
     @Test
     void contextLoads() {

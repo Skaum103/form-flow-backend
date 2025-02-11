@@ -1,6 +1,6 @@
 package com.example.form_flow_backend.controller;
 
-import com.example.form_flow_backend.model.DummyData;
+import com.example.form_flow_backend.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,7 +53,7 @@ public class HomeController {
     @ApiResponse(responseCode = "404", description = "Resource not found")
     @ApiResponse(responseCode = "400", description = "Bad request")
     @PostMapping("/dummy_post")
-    public String receivePost(@RequestBody DummyData data) {
+    public String receivePost(@RequestBody User data) {
         return "Received POST request with data: " + data;
     }
 }

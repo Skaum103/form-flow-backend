@@ -1,37 +1,48 @@
 package com.example.form_flow_backend;
 
-import com.example.form_flow_backend.Utilities.SecretManagerUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.Environment;
 
-/**
- * Main application class for Form Flow Backend.
- * English comment: Entry point for the Spring Boot application.
- */
+import com.example.form_flow_backend.Utilities.SecretManagerUtil;
+
+
 @SpringBootApplication
 public class FormFlowBackendApplication {
 
-	/**
-	 * Application entry point.
-	 *
-	 * @param args command-line arguments
-	 * @throws JSONException if there is an error processing JSON
-	 */
 	public static void main(String[] args) throws JSONException {
-		System.setProperty("DEPLOY_MODE", "cloud");
+		// Use SpringApplicationBuilder to configure the application
+		SpringApplicationBuilder builder = new SpringApplicationBuilder(FormFlowBackendApplication.class);
 
-		// If in local deployment mode, no secret retrieval is needed.
-		if (System.getProperty("DEPLOY_MODE").equals("local")) {
-			// Local deployment; no action needed.
-		} else {
-			// Retrieve database credentials from secret manager.
-			JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
-			System.setProperty("DB_USERNAME", secret.getString("username"));
-			System.setProperty("DB_PASSWORD", secret.getString("password"));
-		}
+		// Add an initializer to read the deploy mode and conditionally retrieve secrets.
+		builder.initializers((ApplicationContextInitializer<ConfigurableApplicationContext>) applicationContext -> {
+			Environment env = applicationContext.getEnvironment();
+			// Command-line arguments are automatically bound as properties.
+			String deployMode = env.getProperty("deploy.mode", "cloud");
 
-		SpringApplication.run(FormFlowBackendApplication.class, args);
+			if ("local".equalsIgnoreCase(deployMode)) {
+				// Local deployment: no need to retrieve AWS secrets.
+				System.out.println("Running in local mode. Skipping AWS secret retrieval.");
+			} else {
+				// Cloud deployment: retrieve database credentials from AWS Secrets Manager.
+				String dbSecretName = env.getProperty("DB_SECRET_NAME");
+				if (dbSecretName != null) {
+					JSONObject secret = SecretManagerUtil.getSecret(dbSecretName);
+					System.setProperty("DB_USERNAME", secret.getString("username"));
+					System.setProperty("DB_PASSWORD", secret.getString("password"));
+					System.out.println("Retrieved DB credentials from AWS Secrets Manager.");
+				} else {
+					System.err.println("db.secret.name property not provided!");
+				}
+			}
+		});
+
+		// Run the application with the given command-line arguments.
+		builder.run(args);
 	}
 }

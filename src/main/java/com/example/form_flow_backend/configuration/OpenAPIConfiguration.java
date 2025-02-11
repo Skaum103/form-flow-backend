@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import java.util.Collections;
 
@@ -18,11 +19,14 @@ public class OpenAPIConfiguration {
      * @return the configured OpenAPI instance
      */
     @Bean
-    public OpenAPI defineOpenApi() {
+    public OpenAPI defineOpenApi(Environment env) {
         Server server = new Server();
 
+        // Read deploy.mode property from the environment, defaulting to "cloud" if not provided.
+        String deployMode = env.getProperty("deploy.mode", "cloud");
+
         // Set server URL based on deployment mode
-        if (System.getProperty("DEPLOY_MODE").equals("local")) {
+        if (deployMode.equals("local")) {
             server.setUrl("http://localhost:8080/");
         } else {
             server.setUrl("http://form-flow.us-east-1.elasticbeanstalk.com/");

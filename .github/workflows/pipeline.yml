@@ -86,3 +86,4 @@ jobs:
             --application-name ${{ secrets.EB_APPLICATION_NAME }} \
             --environment-name ${{ secrets.EB_ENVIRONMENT_NAME }} \
             --version-label "$VERSION_LABEL" \
+            --option-settings Namespace=aws:elasticbeanstalk:application:environment,OptionName=DEPLOY_MODE,Value=cloud

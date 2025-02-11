@@ -39,6 +39,8 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testImplementation 'com.github.stefanbirkner:system-lambda:1.2.0'
+	testImplementation 'com.h2database:h2:2.2.220'
+
 
 
 	// Spring Boot Session
@@ -53,6 +55,7 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+	systemProperty "spring.profiles.active", "test"
 	jvmArgs += ["--add-opens", "java.base/java.util=ALL-UNNAMED"]
 	finalizedBy jacocoTestReport
 }

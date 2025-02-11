@@ -27,7 +27,7 @@ public class SecretManagerUtilTest {
 
     @BeforeAll
     static void setup() {
-        System.setProperty("DEPLOY_MODE", "local");
+        System.setProperty("DEPLOY_MODE", "cloud");
     }
 
     @Test

@@ -26,10 +26,15 @@ class FormFlowBackendApplicationTests {
 
     @BeforeAll
     static void setup() {
-        // Retrieve database credentials from secret manager.
-        JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
-        System.setProperty("DB_USERNAME", secret.getString("username"));
-        System.setProperty("DB_PASSWORD", secret.getString("password"));
+        System.setProperty("DEPLOY_MODE", "cloud");
+        if (System.getProperty("DEPLOY_MODE").equals("local")) {
+            // Local deployment; no action needed.
+        } else {
+            // Retrieve database credentials from secret manager.
+            JSONObject secret = SecretManagerUtil.getSecret(System.getenv("DB_SECRET_NAME"));
+            System.setProperty("DB_USERNAME", secret.getString("username"));
+            System.setProperty("DB_PASSWORD", secret.getString("password"));
+        }
     }
 
     @Test

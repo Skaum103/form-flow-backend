@@ -38,6 +38,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'com.github.stefanbirkner:system-lambda:1.2.0'
+
 
 	// Spring Boot Session
 	implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -51,6 +53,7 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+	jvmArgs += ["--add-opens", "java.base/java.util=ALL-UNNAMED"]
 	finalizedBy jacocoTestReport
 }
 

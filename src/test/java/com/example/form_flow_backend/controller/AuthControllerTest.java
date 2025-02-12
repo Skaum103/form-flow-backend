@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
@@ -114,5 +115,28 @@ public class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"))
                 .andExpect(jsonPath("$.message").value("User registered"));
+    }
+
+
+    /**
+     * Tests the /auth/delete endpoint in a secured context.
+     * The endpoint is protected, so we use @WithMockUser to simulate an authenticated user.
+     * We stub the service to return a success message, then verify that the endpoint returns the expected response.
+     */
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN", "USER"})
+    void testDeleteUserProtected() throws Exception {
+        // Stub the service method to return "User deleted" when called with "userToDelete"
+        when(userManagementService.deleteUser("userToDelete")).thenReturn("User deleted");
+
+        // JSON payload representing a user with the username "userToDelete"
+        String userJson = "{\"username\":\"userToDelete\"}";
+
+        // Perform a POST request to the /auth/delete endpoint as an authenticated user and verify the response
+        mockMvc.perform(post("/auth/delete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(userJson))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User deleted"));
     }
 }

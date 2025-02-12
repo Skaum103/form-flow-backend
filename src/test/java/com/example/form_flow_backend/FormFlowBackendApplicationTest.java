@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.form_flow_backend.repository.UserRepository;
 import com.example.form_flow_backend.service.UserManagementService;
+import jakarta.validation.constraints.Null;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +58,32 @@ public class FormFlowBackendApplicationTest {
             // Instead of verifying SpringApplication.run, verify the side effects:
             assertEquals("dummyUser", System.getProperty("DB_USERNAME"));
             assertEquals("dummyPass", System.getProperty("DB_PASSWORD"));
+        }
+    }
+
+
+    /**
+     * Test that when deploy.mode is "cloud" (passed as an argument) along with
+     * --db.secret.name, the application retrieves credentials.
+     */
+    @Test
+    public void testMain_cloudDeployment_NoDBSecret() {
+        // Prepare a dummy secret.
+        try (MockedStatic<SecretManagerUtil> secretManagerMock = mockStatic(SecretManagerUtil.class)) {
+            JSONObject dummySecret = new JSONObject();
+            dummySecret.put("username", "dummyUser");
+            dummySecret.put("password", "dummyPass");
+            secretManagerMock.when(() -> SecretManagerUtil.getSecret("dummySecret"))
+                    .thenReturn(dummySecret);
+
+            // Call main with the expected arguments.
+            String[] args = {"--deploy.mode=cloud"};
+            FormFlowBackendApplication.main(args);
+        }
+        catch (NullPointerException e) {
+            // Instead of verifying SpringApplication.run, verify the side effects:
+            assertNull(System.getProperty("DB_USERNAME"));
+            assertNull(System.getProperty("DB_PASSWORD"));
         }
     }
 

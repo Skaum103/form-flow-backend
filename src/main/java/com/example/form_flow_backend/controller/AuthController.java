@@ -28,14 +28,6 @@ public class AuthController {
         this.userManagementService = userManagementService;
     }
 
-    /**
-     * Retrieves session details.
-     * English comment: Returns details of the current session.
-     */
-    @GetMapping("/session")
-    public String getSession(Authentication authentication) {
-        return userManagementService.getSessionDetails(authentication);
-    }
 
     /**
      * Login endpoint.

@@ -9,6 +9,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
+                .allowedOriginPatterns("http://from-flow-fe.us-east-1.elasticbeanstalk.com:*")
                 .allowedOriginPatterns("http://localhost:*")
                 .allowCredentials(true)
                 .allowedMethods("*")

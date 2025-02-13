@@ -1,12 +1,11 @@
 package com.example.form_flow_backend.configuration;
 
 import com.example.form_flow_backend.model.User;
-import com.example.form_flow_backend.repository.UserRepository; // <-- 需要导入你的 UserRepository
+import com.example.form_flow_backend.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired; // <-- 需要导入@Autowired
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,11 +15,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import java.util.Optional;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -29,19 +25,14 @@ public class SecurityConfig {
     Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Autowired
-    private UserRepository userRepository; // <-- 注入 UserRepository
+    private UserRepository userRepository;
 
-    /**
-     * Configures the security filter chain for HTTP requests.
-     *
-     * @param http the HttpSecurity instance
-     * @return the configured SecurityFilterChain
-     * @throws Exception in case of configuration error
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.cors(withDefaults())
-                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for testing; enable in production with CSRF token
+        // Remove any explicit CORS configuration:
+        http
+                // Disable CSRF for testing purposes; configure properly in production
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/auth/register",
@@ -58,15 +49,11 @@ public class SecurityConfig {
                         .successHandler((request, response, authentication) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             String sessionId = request.getSession().getId();
-
-                            // 这里依然使用前端表单提交过来的 "username" 参数
                             String username = request.getParameter("username");
 
-                            // 从数据库查找用户，拿到邮箱
                             Optional<User> userOpt = userRepository.findByUsername(username);
                             String email = userOpt.map(User::getEmail).orElse("");
 
-                            // 拼装 JSON：注意要加逗号、去掉多余逗号，保证合法
                             response.getWriter().write(
                                     "{"
                                             + "\"success\":true,"
@@ -100,13 +87,9 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Provides the password encoder bean.
-     *
-     * @return a BCryptPasswordEncoder instance
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Ensures passwords are securely hashed
+        return new BCryptPasswordEncoder();
     }
 }
+

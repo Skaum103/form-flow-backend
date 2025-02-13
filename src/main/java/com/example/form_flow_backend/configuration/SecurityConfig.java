@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,19 +19,28 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.Optional;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
 @ConditionalOnWebApplication
 public class SecurityConfig {
-    Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Autowired
     private UserRepository userRepository;
 
+
+    /**
+     * Configures the security filter chain for HTTP requests.
+     *
+     * @param http the HttpSecurity instance
+     * @return the configured SecurityFilterChain
+     * @throws Exception in case of configuration error
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // Remove any explicit CORS configuration:
-        http
+        http.cors(withDefaults())
                 // Disable CSRF for testing purposes; configure properly in production
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth

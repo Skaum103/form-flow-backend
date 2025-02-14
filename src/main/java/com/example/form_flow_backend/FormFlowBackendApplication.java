@@ -24,6 +24,7 @@ public class FormFlowBackendApplication {
 			Environment env = applicationContext.getEnvironment();
 			// Command-line arguments are automatically bound as properties.
 			String deployMode = env.getProperty("deploy.mode", "cloud");
+			System.out.println("deployMode: " + deployMode);
 
 			if ("local".equalsIgnoreCase(deployMode)) {
 				// Local deployment: no need to retrieve AWS secrets.

@@ -28,7 +28,6 @@ public class AuthController {
         this.userManagementService = userManagementService;
     }
 
-
     /**
      * Login endpoint.
      * This method handles login requests but currently returns null.
@@ -41,7 +40,6 @@ public class AuthController {
         return "Session";
     }
 
-
     /**
      * Logout endpoint.
      * This method handles logout requests but currently returns null.
@@ -53,7 +51,6 @@ public class AuthController {
         return "Logout success";
     }
 
-
     /**
      * Registers a new user.
      */
@@ -64,7 +61,7 @@ public class AuthController {
 
     /**
      * Deletes a user by username.
-     * English comment: Deletes the user using the provided username.
+     * Deletes the user using the provided username.
      */
     @PostMapping("/delete")
     public String deleteUser(@RequestBody User user) {

@@ -10,12 +10,16 @@ import org.springframework.core.env.Environment;
 
 import java.util.Collections;
 
+/**
+ * Configures the OpenAPI specification for the backend API.
+ */
 @Configuration
 public class OpenAPIConfiguration {
 
     /**
-     * Configures the OpenAPI specification for the backend API.
+     * Defines the OpenAPI instance with the appropriate server URL based on deployment mode.
      *
+     * @param env the environment containing configuration properties
      * @return the configured OpenAPI instance
      */
     @Bean

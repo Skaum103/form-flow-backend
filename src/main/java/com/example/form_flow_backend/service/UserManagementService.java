@@ -21,7 +21,7 @@ import java.util.Optional;
 
 /**
  * Service for managing user operations.
- * English comment: Provides methods for user session handling, registration, and deletion.
+ * Provides methods for user session handling, registration, and deletion.
  */
 @Service
 public class UserManagementService {
@@ -42,7 +42,7 @@ public class UserManagementService {
 
     /**
      * Returns the current session details.
-     * English comment: Retrieves session details based on the current authentication context.
+     * Retrieves session details based on the current authentication context.
      *
      * @param authentication the current authentication object
      * @return session details as a String
@@ -56,7 +56,7 @@ public class UserManagementService {
 
     /**
      * Registers a new user.
-     * English comment: Validates and registers a user if the username and email are not already in use.
+     * Validates and registers a user if the username and email are not already in use.
      *
      * @param user the user to register
      * @return a ResponseEntity containing the result of the registration
@@ -87,7 +87,7 @@ public class UserManagementService {
 
     /**
      * Deletes a user if they exist.
-     * English comment: Removes a user identified by username.
+     * Removes a user identified by username.
      *
      * @param username the username of the user to delete
      * @return a message indicating the result of the deletion
@@ -103,7 +103,7 @@ public class UserManagementService {
 
     /**
      * Configures the UserDetailsService bean.
-     * English comment: Provides a UserDetailsService for authentication using user repository.
+     * Provides a UserDetailsService for authentication using user repository.
      *
      * @param userRepository the repository for user data
      * @return a UserDetailsService instance

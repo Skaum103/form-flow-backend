@@ -16,7 +16,7 @@ public class HomeController {
 
     /**
      * Greet the user.
-     * English comment: Returns a simple greeting message.
+     * Returns a simple greeting message.
      *
      * @return greeting message
      */
@@ -29,7 +29,7 @@ public class HomeController {
 
     /**
      * Receives a GET request.
-     * English comment: Dummy endpoint for GET request testing.
+     * Dummy endpoint for GET request testing.
      *
      * @return a message indicating a GET request was received
      */
@@ -43,7 +43,7 @@ public class HomeController {
 
     /**
      * Receives a POST request with dummy data.
-     * English comment: Dummy endpoint for POST request testing.
+     * Dummy endpoint for POST request testing.
      *
      * @param data the dummy data sent in the request body
      * @return a message indicating the POST request was received along with data

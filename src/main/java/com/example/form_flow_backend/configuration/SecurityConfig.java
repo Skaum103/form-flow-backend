@@ -84,7 +84,7 @@ public class SecurityConfig {
                                 "/auth/session",
                                 "/v3/**",
                                 "/swagger-ui/**",
-                                "*"
+                                "/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

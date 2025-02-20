@@ -6,16 +6,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+// 关键：这里用的是 MVC 下的 UrlBasedCorsConfigurationSource
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,37 +28,33 @@ public class SecurityConfig {
 
     private final UserRepository userRepository;
 
-    // 如果之前用 @Autowired，也可以用构造注入
     public SecurityConfig(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     /**
-     * 显式声明一个 CorsConfigurationSource，以便让 Spring Security 正确使用 CORS 配置
+     * 让 Spring Security 在跨域时使用此配置，确保携带Cookie
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 允许跨域的来源（确保与你前端实际访问域名一致）
+        // 这里写允许跨域的源，确保和前端实际访问的域名一致
         configuration.setAllowedOrigins(List.of(
                 "http://from-flow-fe.us-east-1.elasticbeanstalk.com",
                 "http://localhost:3000"
         ));
 
-        // 允许的 HTTP 方法
         configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
-
-        // 允许的请求头
         configuration.setAllowedHeaders(List.of("*"));
 
-        // 允许携带认证信息（Cookie 等）
+        // 允许跨域带 Cookie
         configuration.setAllowCredentials(true);
 
-        // 如果前端需要读取自定义响应头，可以在这里配置：
+        // 如果需要让前端能读取自定义响应头（如 "Set-Cookie"），可在此添加：
         // configuration.addExposedHeader("Set-Cookie");
 
-        // 将该配置应用于所有路径
+        // 将上述配置应用到所有路径
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
 
@@ -65,15 +62,16 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures the security filter chain for HTTP requests.
+     * Security 核心过滤器链配置
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // 使用自定义的 corsConfigurationSource()
+        // 使用我们自定义的 corsConfigurationSource()
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // 测试环境下禁用 CSRF（生产环境请根据需要配置）
+                // 测试环境下关闭 CSRF（生产环境请谨慎处理）
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // 放行以下端点
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/login",
@@ -127,6 +125,9 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * 密码加密器
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

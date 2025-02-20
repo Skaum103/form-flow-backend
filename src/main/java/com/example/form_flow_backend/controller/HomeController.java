@@ -1,6 +1,7 @@
 package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.model.User;
+import com.example.form_flow_backend.service.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,12 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Home", description = "Endpoints for home requests")
 public class HomeController {
 
+    SessionService sessionService;
+
+    public HomeController(SessionService sessionService) {
+        this.sessionService = sessionService;
+    }
+
     /**
      * Greet the user.
      * Returns a simple greeting message.
@@ -23,7 +30,10 @@ public class HomeController {
     @Operation(summary = "Greet the user")
     @ApiResponse(responseCode = "200", description = "Successful operation")
     @GetMapping("/home")
-    public String greet() {
+    public String greet(@RequestBody String sessionID) {
+        if (sessionID == null || !sessionService.verifySession(sessionID)) {
+            return "Unauthorized";
+        }
         return "Hello, World!";
     }
 
@@ -37,7 +47,10 @@ public class HomeController {
     @ApiResponse(responseCode = "200", description = "Successful operation")
     @ApiResponse(responseCode = "404", description = "Resource not found")
     @GetMapping("/dummy_get")
-    public String receiveGet() {
+    public String receiveGet(@RequestBody String sessionID) {
+        if (sessionID == null || !sessionService.verifySession(sessionID)) {
+            return "Unauthorized";
+        }
         return "Received GET request!";
     }
 
@@ -53,7 +66,10 @@ public class HomeController {
     @ApiResponse(responseCode = "404", description = "Resource not found")
     @ApiResponse(responseCode = "400", description = "Bad request")
     @PostMapping("/dummy_post")
-    public String receivePost(@RequestBody User data) {
+    public String receivePost(@RequestBody String sessionID, @RequestBody String data) {
+        if (sessionID == null || !sessionService.verifySession(sessionID)) {
+            return "Unauthorized";
+        }
         return "Received POST request with data: " + data;
     }
 }

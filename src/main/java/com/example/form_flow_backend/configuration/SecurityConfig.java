@@ -1,7 +1,10 @@
 package com.example.form_flow_backend.configuration;
 
+import com.example.form_flow_backend.model.Session;
 import com.example.form_flow_backend.model.User;
+import com.example.form_flow_backend.repository.SessionRepository;
 import com.example.form_flow_backend.repository.UserRepository;
+import com.example.form_flow_backend.service.SessionService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
@@ -27,9 +30,11 @@ import java.util.Optional;
 public class SecurityConfig {
 
     private final UserRepository userRepository;
+    private final SessionService sessionService;
 
-    public SecurityConfig(UserRepository userRepository) {
+    public SecurityConfig(UserRepository userRepository, SessionService sessionService) {
         this.userRepository = userRepository;
+        this.sessionService = sessionService;
     }
 
     /**
@@ -78,7 +83,8 @@ public class SecurityConfig {
                                 "/auth/logout",
                                 "/auth/session",
                                 "/v3/**",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                "*"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -86,19 +92,17 @@ public class SecurityConfig {
                         .loginProcessingUrl("/auth/login")
                         .successHandler((request, response, authentication) -> {
                             response.setContentType("application/json;charset=UTF-8");
-                            String sessionId = request.getSession().getId();
                             String username = request.getParameter("username");
-
                             Optional<User> userOpt = userRepository.findByUsername(username);
                             String email = userOpt.map(User::getEmail).orElse("");
-
+                            Session session = sessionService.createSession(username);
                             response.getWriter().write(
                                     "{"
                                             + "\"success\":true,"
                                             + "\"message\":\"Login successful\","
                                             + "\"username\":\"" + (username == null ? "" : username) + "\","
                                             + "\"email\":\"" + (email == null ? "" : email) + "\","
-                                            + "\"JSESSIONID\":\"" + sessionId + "\""
+                                            + "\"session\":\"" + session.getSessionToken() + "\""
                                             + "}"
                             );
                         })

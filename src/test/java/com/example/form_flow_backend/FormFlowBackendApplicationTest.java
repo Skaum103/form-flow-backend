@@ -50,7 +50,7 @@ public class FormFlowBackendApplicationTest {
                     .thenReturn(dummySecret);
 
             // Call main with the expected arguments.
-            String[] args = {"--deploy.mode=cloud", "--server.port=1"};
+            String[] args = {"--deploy.mode=cloud", "--server.port=8888"};
             // Set the system property for DB_SECRET_NAME before calling main.
             System.setProperty("DB_SECRET_NAME", "dummySecret");
             FormFlowBackendApplication.main(args);

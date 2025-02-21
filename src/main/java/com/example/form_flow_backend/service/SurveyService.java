@@ -40,7 +40,6 @@ public class SurveyService {
 
         // 1. 查找当前登录用户
         Optional<Session> session = sessionRepository.findBySessionToken(request.getSessionToken());
-        String username = session
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isEmpty()) {
             response.put("success", false);

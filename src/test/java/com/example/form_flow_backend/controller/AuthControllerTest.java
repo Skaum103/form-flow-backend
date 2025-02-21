@@ -92,7 +92,9 @@ public class AuthControllerTest {
      */
     @Test
     void testLogout() throws Exception {
-        mockMvc.perform(post("/auth/logout"))
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .param("sessionToken", "dummyToken"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("{\"success\":true,\"message\":\"Logout successful\"}"));
     }

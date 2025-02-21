@@ -115,6 +115,8 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
+                            String sessionToken = request.getParameter("sessionToken");
+                            sessionService.deleteSession(sessionToken);
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write(
                                     "{\"success\":true,\"message\":\"Logout successful\"}"

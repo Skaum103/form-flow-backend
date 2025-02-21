@@ -1,6 +1,7 @@
 package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
+import com.example.form_flow_backend.service.SessionService;
 import com.example.form_flow_backend.service.SurveyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,9 +14,11 @@ import java.util.Map;
 public class SurveyController {
 
     private final SurveyService surveyService;
+    private final SessionService sessionService;
 
-    public SurveyController(SurveyService surveyService) {
+    public SurveyController(SurveyService surveyService, SessionService sessionService) {
         this.surveyService = surveyService;
+        this.sessionService = sessionService;
     }
 
     @PostMapping("/create")
@@ -26,6 +29,9 @@ public class SurveyController {
 
     @PostMapping("/update_questions")
     public ResponseEntity<?> updateQuestions(@RequestBody UpdateQuestionsRequest request) {
+        if (request.getSessionToken() == null || !sessionService.verifySession(request.getSessionToken())) {
+            return ResponseEntity.badRequest().body("Unauthorized");
+        }
         return surveyService.updateQuestions(request);
     }
 }

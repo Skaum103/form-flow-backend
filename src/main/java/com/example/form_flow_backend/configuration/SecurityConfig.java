@@ -94,15 +94,12 @@ public class SecurityConfig {
                             response.setContentType("application/json;charset=UTF-8");
                             String username = request.getParameter("username");
                             Optional<User> userOpt = userRepository.findByUsername(username);
-                            String email = userOpt.map(User::getEmail).orElse("");
                             Session session = sessionService.createSession(username);
                             response.getWriter().write(
                                     "{"
-                                            + "\"success\":true,"
                                             + "\"message\":\"Login successful\","
                                             + "\"username\":\"" + (username == null ? "" : username) + "\","
-                                            + "\"email\":\"" + (email == null ? "" : email) + "\","
-                                            + "\"session\":\"" + session.getSessionToken() + "\""
+                                            + "\"sessionToken\":\"" + session.getSessionToken() + "\""
                                             + "}"
                             );
                         })

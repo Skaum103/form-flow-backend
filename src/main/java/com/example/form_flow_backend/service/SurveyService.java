@@ -2,14 +2,14 @@ package com.example.form_flow_backend.service;
 
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
+import com.example.form_flow_backend.model.Session;
 import com.example.form_flow_backend.model.Survey;
 import com.example.form_flow_backend.model.User;
 import com.example.form_flow_backend.model.Question;
 import com.example.form_flow_backend.repository.QuestionRepository;
+import com.example.form_flow_backend.repository.SessionRepository;
 import com.example.form_flow_backend.repository.SurveyRepository;
 import com.example.form_flow_backend.repository.UserRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -25,19 +25,22 @@ public class SurveyService {
     private final UserRepository userRepository;
     private final SurveyRepository surveyRepository;
     private final QuestionRepository questionRepository;
+    private final SessionRepository sessionRepository;
 
     public SurveyService(UserRepository userRepository,
-                         SurveyRepository surveyRepository, QuestionRepository questionRepository) {
+                         SurveyRepository surveyRepository, QuestionRepository questionRepository, SessionRepository sessionRepository) {
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
         this.questionRepository = questionRepository;
+        this.sessionRepository = sessionRepository;
     }
 
     public ResponseEntity<Map<String, Object>> createSurvey(CreateSurveyRequest request) {
         Map<String, Object> response = new HashMap<>();  // 用于统一封装 JSON 响应
 
         // 1. 查找当前登录用户
-        String username = requestData.get("username");
+        Optional<Session> session = sessionRepository.findBySessionToken(request.getSessionToken());
+        String username = session
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isEmpty()) {
             response.put("success", false);

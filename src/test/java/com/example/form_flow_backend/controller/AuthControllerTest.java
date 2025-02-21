@@ -67,6 +67,7 @@ public class AuthControllerTest {
                         .param("password", "password"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Login successful"))
                 .andExpect(jsonPath("$.sessionToken").exists())
                 .andExpect(jsonPath("$.username").exists());

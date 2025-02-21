@@ -97,6 +97,7 @@ public class SecurityConfig {
                             Session session = sessionService.createSession(username);
                             response.getWriter().write(
                                     "{"
+                                            + "\"success\":true,"
                                             + "\"message\":\"Login successful\","
                                             + "\"username\":\"" + username + "\","
                                             + "\"sessionToken\":\"" + session.getSessionToken() + "\""

@@ -14,6 +14,9 @@ public class Question {
     private Long id;
 
     @Column(nullable = false)
+    private String type;
+
+    @Column(nullable = false)
     private String description;
 
     @Column(nullable = false)

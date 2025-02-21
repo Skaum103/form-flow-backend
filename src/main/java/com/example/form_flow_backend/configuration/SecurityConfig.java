@@ -98,7 +98,7 @@ public class SecurityConfig {
                             response.getWriter().write(
                                     "{"
                                             + "\"message\":\"Login successful\","
-                                            + "\"username\":\"" + (username == null ? "" : username) + "\","
+                                            + "\"username\":\"" + username + "\","
                                             + "\"sessionToken\":\"" + session.getSessionToken() + "\""
                                             + "}"
                             );

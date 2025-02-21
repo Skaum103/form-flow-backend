@@ -1,5 +1,6 @@
 package com.example.form_flow_backend.service;
 
+import com.example.form_flow_backend.DTO.CreateSurveyRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.model.Survey;
 import com.example.form_flow_backend.model.User;
@@ -32,7 +33,7 @@ public class SurveyService {
         this.questionRepository = questionRepository;
     }
 
-    public ResponseEntity<Map<String, Object>> createSurvey(Map<String, String> requestData) {
+    public ResponseEntity<Map<String, Object>> createSurvey(CreateSurveyRequest request) {
         Map<String, Object> response = new HashMap<>();  // 用于统一封装 JSON 响应
 
         // 1. 查找当前登录用户

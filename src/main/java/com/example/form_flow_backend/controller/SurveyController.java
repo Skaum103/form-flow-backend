@@ -1,5 +1,6 @@
 package com.example.form_flow_backend.controller;
 
+import com.example.form_flow_backend.DTO.CreateSurveyRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.service.SessionService;
 import com.example.form_flow_backend.service.SurveyService;
@@ -22,9 +23,12 @@ public class SurveyController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createSurvey(@RequestBody Map<String, String> requestData) {
+    public ResponseEntity<?> createSurvey(@RequestBody CreateSurveyRequest request) {
+        if (request.getSessionToken() == null || !sessionService.verifySession(request.getSessionToken())) {
+            return ResponseEntity.badRequest().body("Unauthorized");
+        }
         // 将请求体和用户名一起传给 Service
-        return surveyService.createSurvey(requestData);
+        return surveyService.createSurvey(request);
     }
 
     @PostMapping("/update_questions")

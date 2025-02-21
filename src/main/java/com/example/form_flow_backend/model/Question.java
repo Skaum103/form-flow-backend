@@ -17,6 +17,9 @@ public class Question {
     private String type;
 
     @Column(nullable = false)
+    private int order;
+
+    @Column(nullable = false)
     private String description;
 
     @Column(nullable = false)

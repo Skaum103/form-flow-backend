@@ -43,12 +43,13 @@ class SurveyControllerTest {
     void createSurvey_Success() throws Exception {
         // 1. Service层模拟返回
         Map<String, Object> serviceResponse = new HashMap<>();
+        serviceResponse.put("username", "testuser");
         serviceResponse.put("success", true);
         serviceResponse.put("message", "Survey created successfully");
         serviceResponse.put("surveyId", 123L);
 
         // 当 serviceService.createSurvey("loggedInUser", anything...) 被调用时，返回 200 + JSON
-        when(surveyService.createSurvey(eq("loggedInUser"), anyMap()))
+        when(surveyService.createSurvey(anyMap()))
                 .thenReturn(ResponseEntity.ok(serviceResponse));
 
         // 2. 用 mockMvc 模拟 HTTP POST 请求
@@ -62,7 +63,7 @@ class SurveyControllerTest {
 
         // 3. 验证service是否被正确调用
         verify(surveyService, times(1))
-                .createSurvey(eq("loggedInUser"), anyMap());
+                .createSurvey(anyMap());
     }
 
     @Test
@@ -70,10 +71,11 @@ class SurveyControllerTest {
     void createSurvey_MissingSurveyName() throws Exception {
         // 1. Service层返回 400
         Map<String, Object> serviceResponse = new HashMap<>();
+        serviceResponse.put("username", "testuser");
         serviceResponse.put("success", false);
         serviceResponse.put("message", "surveyName is required");
 
-        when(surveyService.createSurvey(eq("loggedInUser"), anyMap()))
+        when(surveyService.createSurvey(anyMap()))
                 .thenReturn(ResponseEntity.badRequest().body(serviceResponse));
 
         // 2. 此时请求体里故意不传 surveyName
@@ -85,6 +87,6 @@ class SurveyControllerTest {
                 .andExpect(jsonPath("$.message").value("surveyName is required"));
 
         verify(surveyService, times(1))
-                .createSurvey(eq("loggedInUser"), anyMap());
+                .createSurvey(anyMap());
     }
 }

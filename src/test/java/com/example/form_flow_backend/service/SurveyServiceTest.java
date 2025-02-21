@@ -39,6 +39,7 @@ class SurveyServiceTest {
         // 1. 准备模拟参数
         String loggedInUsername = "testUser";
         Map<String, String> requestData = new HashMap<>();
+        requestData.put("username", loggedInUsername);
         requestData.put("surveyName", "My First Survey");
         requestData.put("description", "Just a test.");
 
@@ -56,7 +57,7 @@ class SurveyServiceTest {
         when(surveyRepository.save(any(Survey.class))).thenReturn(savedSurvey);
 
         // 4. 调用被测方法
-        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(loggedInUsername, requestData);
+        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(requestData);
 
         // 5. 验证结果
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -75,6 +76,7 @@ class SurveyServiceTest {
         // 1. 准备
         String loggedInUsername = "nonExistentUser";
         Map<String, String> requestData = new HashMap<>();
+        requestData.put("username", loggedInUsername);
         requestData.put("surveyName", "Some Survey");
 
         // 2. 模拟：查不到用户
@@ -82,7 +84,7 @@ class SurveyServiceTest {
                 .thenReturn(Optional.empty());
 
         // 3. 调用
-        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(loggedInUsername, requestData);
+        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(requestData);
 
         // 4. 验证
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -100,15 +102,16 @@ class SurveyServiceTest {
         String loggedInUsername = "testUser";
         Map<String, String> requestData = new HashMap<>();
         // 故意不放 surveyName
+        requestData.put("username", loggedInUsername);
         requestData.put("description", "Just a test.");
 
         User fakeUser = new User();
-        fakeUser.setUsername("testUser");
+        fakeUser.setUsername(loggedInUsername);
         when(userRepository.findByUsername(loggedInUsername))
                 .thenReturn(Optional.of(fakeUser));
 
         // 2. 调用
-        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(loggedInUsername, requestData);
+        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(requestData);
 
         // 3. 验证
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

@@ -16,7 +16,7 @@ public class Survey {
     @Column(nullable = false)
     private String surveyName;
 
-    @Column(nullable = false)
+    @Column
     private String description;
 
     @ManyToOne

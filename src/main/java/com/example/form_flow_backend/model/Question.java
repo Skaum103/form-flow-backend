@@ -17,7 +17,7 @@ public class Question {
     private String type;
 
     @Column(nullable = false)
-    private int order;
+    private Integer question_order;
 
     @Column(nullable = false)
     private String description;

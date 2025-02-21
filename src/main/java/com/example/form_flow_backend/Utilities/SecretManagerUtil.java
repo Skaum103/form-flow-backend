@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 
 /**
  * Utility class for accessing AWS Secrets Manager.
- * English comment: Provides methods to retrieve secrets as JSON objects.
+ * Provides methods to retrieve secrets as JSON objects.
  */
 public class SecretManagerUtil {
 

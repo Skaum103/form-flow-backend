@@ -145,8 +145,6 @@ public class SurveyService {
         // 6. 返回成功结果
         response.put("success", true);
         response.put("message", "Questions updated successfully.");
-        // 如果你想返回新增问题，也可以放在这里
-        response.put("data", survey);
 
         return ResponseEntity.ok(response);
     }

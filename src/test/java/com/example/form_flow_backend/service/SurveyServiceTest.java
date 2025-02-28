@@ -23,181 +23,177 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 class SurveyServiceTest {
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private SurveyRepository surveyRepository;
-
     @Mock
     private QuestionRepository questionRepository;
-
     @Mock
     private SessionRepository sessionRepository;
-
     @InjectMocks
     private SurveyService surveyService;
 
     @BeforeEach
     void setUp() {
-        // 每个测试执行前都会先执行这里，你可以在此做一些通用的初始化或 Mock 行为
     }
 
-    /**
-     * 测试：创建问卷成功
-     * 条件：
-     * 1. sessionToken 对应的 Session 存在
-     * 2. Session 中 username 对应的 User 存在
-     * 3. surveyName 不为空
-     */
     @Test
     void createSurvey_Success() {
-        // 1. 构造请求
         CreateSurveyRequest request = new CreateSurveyRequest();
         request.setSessionToken("valid-session-token");
         request.setSurveyName("My First Survey");
         request.setDescription("Just a test.");
-
-        // 2. Mock Session
         Session fakeSession = new Session();
         fakeSession.setSessionToken("valid-session-token");
         fakeSession.setUsername("testUser");
-        when(sessionRepository.findBySessionToken("valid-session-token"))
-                .thenReturn(Optional.of(fakeSession));
-
-        // 3. Mock User
+        when(sessionRepository.findBySessionToken("valid-session-token")).thenReturn(Optional.of(fakeSession));
         User fakeUser = new User();
         fakeUser.setId(1L);
         fakeUser.setUsername("testUser");
-        when(userRepository.findByUsername("testUser"))
-                .thenReturn(Optional.of(fakeUser));
-
-        // 4. Mock SurveyRepository 保存行为
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(fakeUser));
         Survey savedSurvey = new Survey();
         savedSurvey.setId(100L);
         savedSurvey.setSurveyName("My First Survey");
         when(surveyRepository.save(any(Survey.class))).thenReturn(savedSurvey);
-
-        // 5. 调用被测方法
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
-
-        // 6. 验证结果
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue((Boolean) response.getBody().get("success"));
         assertEquals("Survey created successfully.", response.getBody().get("message"));
         assertEquals(100L, response.getBody().get("surveyId"));
-
-        // 7. 验证调用次数
         verify(sessionRepository, times(1)).findBySessionToken("valid-session-token");
         verify(userRepository, times(1)).findByUsername("testUser");
         verify(surveyRepository, times(1)).save(any(Survey.class));
         verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
-    /**
-     * 测试：sessionToken 无效或没找到 session
-     */
     @Test
     void createSurvey_InvalidSessionToken() {
-        // 1. 构造请求
         CreateSurveyRequest request = new CreateSurveyRequest();
         request.setSessionToken("invalid-token");
         request.setSurveyName("SurveyName");
-
-        // 2. Mock sessionRepository 返回空
-        when(sessionRepository.findBySessionToken("invalid-token"))
-                .thenReturn(Optional.empty());
-
-        // 3. 调用
+        when(sessionRepository.findBySessionToken("invalid-token")).thenReturn(Optional.empty());
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
-
-        // 4. 验证
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse((Boolean) response.getBody().get("success"));
         assertEquals("Session not found or invalid.", response.getBody().get("message"));
-
-        // 5. 验证调用次数
         verify(sessionRepository, times(1)).findBySessionToken("invalid-token");
         verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
-    /**
-     * 测试：Session 存在，但用户不存在
-     */
     @Test
     void createSurvey_UserNotFound() {
-        // 1. 构造请求
         CreateSurveyRequest request = new CreateSurveyRequest();
         request.setSessionToken("valid-session-token");
         request.setSurveyName("SurveyName");
-
-        // 2. Mock Session
         Session fakeSession = new Session();
         fakeSession.setSessionToken("valid-session-token");
         fakeSession.setUsername("nonExistentUser");
-        when(sessionRepository.findBySessionToken("valid-session-token"))
-                .thenReturn(Optional.of(fakeSession));
-
-        // 3. 模拟 UserRepository 查不到用户
-        when(userRepository.findByUsername("nonExistentUser"))
-                .thenReturn(Optional.empty());
-
-        // 4. 调用
+        when(sessionRepository.findBySessionToken("valid-session-token")).thenReturn(Optional.of(fakeSession));
+        when(userRepository.findByUsername("nonExistentUser")).thenReturn(Optional.empty());
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
-
-        // 5. 验证
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse((Boolean) response.getBody().get("success"));
         assertEquals("User not found in database.", response.getBody().get("message"));
-
-        // 6. 验证调用
         verify(sessionRepository, times(1)).findBySessionToken("valid-session-token");
         verify(userRepository, times(1)).findByUsername("nonExistentUser");
         verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
-    /**
-     * 测试：缺少必填字段 surveyName
-     */
     @Test
     void createSurvey_SurveyNameMissing() {
-        // 1. 构造请求
         CreateSurveyRequest request = new CreateSurveyRequest();
         request.setSessionToken("valid-session-token");
-        // 故意不设置 surveyName
         request.setDescription("Some description.");
-
-        // 2. Mock Session, 假设 sessionToken 合法
         Session fakeSession = new Session();
         fakeSession.setSessionToken("valid-session-token");
         fakeSession.setUsername("testUser");
-        when(sessionRepository.findBySessionToken("valid-session-token"))
-                .thenReturn(Optional.of(fakeSession));
-
-        // 3. Mock 找到用户
+        when(sessionRepository.findBySessionToken("valid-session-token")).thenReturn(Optional.of(fakeSession));
         User fakeUser = new User();
         fakeUser.setId(1L);
         fakeUser.setUsername("testUser");
-        when(userRepository.findByUsername("testUser"))
-                .thenReturn(Optional.of(fakeUser));
-
-        // 4. 调用
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(fakeUser));
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
-
-        // 5. 验证
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse((Boolean) response.getBody().get("success"));
         assertEquals("Survey name is required.", response.getBody().get("message"));
-
-        // 6. 验证调用
         verify(sessionRepository, times(1)).findBySessionToken("valid-session-token");
         verify(userRepository, times(1)).findByUsername("testUser");
-        // 没有调用 surveyRepository.save，因为已经在校验阶段就返回了
+        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
+    }
+
+    @Test
+    void getAllSurveysForUser_Success() {
+        String validToken = "valid-session-token";
+        Session fakeSession = new Session();
+        fakeSession.setSessionToken(validToken);
+        fakeSession.setUsername("testUser");
+        when(sessionRepository.findBySessionToken(validToken)).thenReturn(Optional.of(fakeSession));
+        User fakeUser = new User();
+        fakeUser.setId(1L);
+        fakeUser.setUsername("testUser");
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(fakeUser));
+        Survey s1 = new Survey();
+        s1.setId(101L);
+        s1.setSurveyName("Survey A");
+        s1.setDescription("Desc A");
+        Survey s2 = new Survey();
+        s2.setId(102L);
+        s2.setSurveyName("Survey B");
+        s2.setDescription("Desc B");
+        List<Survey> mockSurveys = Arrays.asList(s1, s2);
+        when(surveyRepository.findAllByUser(fakeUser)).thenReturn(mockSurveys);
+        ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(validToken);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        Map<String, Object> body = response.getBody();
+        assertTrue(body.containsKey("surveys"));
+        List<Map<String, Object>> surveysResult = (List<Map<String, Object>>) body.get("surveys");
+        assertEquals(2, surveysResult.size());
+        Map<String, Object> survey1 = surveysResult.get(0);
+        assertEquals(101L, survey1.get("id"));
+        assertEquals("Survey A", survey1.get("surveyName"));
+        assertEquals("Desc A", survey1.get("description"));
+        Map<String, Object> survey2 = surveysResult.get(1);
+        assertEquals(102L, survey2.get("id"));
+        assertEquals("Survey B", survey2.get("surveyName"));
+        assertEquals("Desc B", survey2.get("description"));
+        verify(sessionRepository, times(1)).findBySessionToken(validToken);
+        verify(userRepository, times(1)).findByUsername("testUser");
+        verify(surveyRepository, times(1)).findAllByUser(fakeUser);
+        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
+    }
+
+    @Test
+    void getAllSurveysForUser_SessionNotFound() {
+        String invalidToken = "invalid-session-token";
+        when(sessionRepository.findBySessionToken(invalidToken)).thenReturn(Optional.empty());
+        ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(invalidToken);
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("Session not found or invalid.", response.getBody().get("message"));
+        verify(sessionRepository, times(1)).findBySessionToken(invalidToken);
+        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
+    }
+
+    @Test
+    void getAllSurveysForUser_UserNotFound() {
+        String validToken = "valid-session-token";
+        Session fakeSession = new Session();
+        fakeSession.setSessionToken(validToken);
+        fakeSession.setUsername("nonExistentUser");
+        when(sessionRepository.findBySessionToken(validToken)).thenReturn(Optional.of(fakeSession));
+        when(userRepository.findByUsername("nonExistentUser")).thenReturn(Optional.empty());
+        ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(validToken);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("User not found in database.", response.getBody().get("message"));
+        verify(sessionRepository, times(1)).findBySessionToken(validToken);
+        verify(userRepository, times(1)).findByUsername("nonExistentUser");
         verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 }

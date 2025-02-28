@@ -7,6 +7,8 @@ import com.example.form_flow_backend.service.SurveyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/survey")
 public class SurveyController {
@@ -19,25 +21,31 @@ public class SurveyController {
         this.sessionService = sessionService;
     }
 
-    /**
-     * 创建问卷
-     * 前端以 JSON 格式传入 { "sessionToken", "surveyName", "description" }
-     */
     @PostMapping("/create")
     public ResponseEntity<?> createSurvey(@RequestBody CreateSurveyRequest request) {
 
         return surveyService.createSurvey(request);
     }
 
-    /**
-     * 更新问卷问题
-     */
     @PostMapping("/update_questions")
     public ResponseEntity<?> updateQuestions(@RequestBody UpdateQuestionsRequest request) {
-        // 这里仍在 Controller 中做 sessionToken 的初步校验，你也可以选择把验证逻辑都放到 Service。
         if (request.getSessionToken() == null || !sessionService.verifySession(request.getSessionToken())) {
             return ResponseEntity.badRequest().body("Unauthorized");
         }
         return surveyService.updateQuestions(request);
+    }
+
+    @PostMapping("/getSurvey")
+    public ResponseEntity<?> getSurvey(@RequestBody Map<String, String> requestBody) {
+        String sessionToken = requestBody.get("sessionToken");
+
+        if (sessionToken == null || sessionToken.isEmpty()) {
+            return ResponseEntity.badRequest().body("Session token is missing.");
+        }
+        if (!sessionService.verifySession(sessionToken)) {
+            return ResponseEntity.status(401).body("Unauthorized or session expired.");
+        }
+
+        return surveyService.getAllSurveysForUser(sessionToken);
     }
 }

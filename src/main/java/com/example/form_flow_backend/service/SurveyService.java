@@ -92,6 +92,48 @@ public class SurveyService {
     }
 
     /**
+     * 获取某用户所有的 Survey
+     */
+    public ResponseEntity<Map<String, Object>> getAllSurveysForUser(String sessionToken) {
+        Map<String, Object> response = new HashMap<>();
+
+        // 1. 根据 sessionToken 查找 Session
+        Optional<Session> sessionOpt = sessionRepository.findBySessionToken(sessionToken);
+        if (sessionOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Session not found or invalid.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        Session session = sessionOpt.get();
+
+        // 2. 获取 username，并查询 User
+        String username = session.getUsername();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "User not found in database.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        User user = userOpt.get();
+
+        // 3. 获取所有 Survey
+        List<Survey> surveys = surveyRepository.findAllByUser(user);
+
+        // 4. 构造返回结果
+        List<Map<String, Object>> surveyList = new ArrayList<>();
+        for (Survey s : surveys) {
+            Map<String, Object> surveyData = new HashMap<>();
+            surveyData.put("id", s.getId());
+            surveyData.put("surveyName", s.getSurveyName());
+            surveyData.put("description", s.getDescription());
+            surveyList.add(surveyData);
+        }
+        response.put("surveys", surveyList);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 更新问题列表
      */
     public ResponseEntity<Map<String, Object>> updateQuestions(UpdateQuestionsRequest request) {

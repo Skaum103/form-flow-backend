@@ -1,47 +1,54 @@
 package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
+import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.service.SessionService;
 import com.example.form_flow_backend.service.SurveyService;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class SurveyControllerTest {
+@WebMvcTest(SurveyController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class SurveyControllerTest {
+
     @Autowired
     private MockMvc mockMvc;
+
     @MockBean
     private SurveyService surveyService;
-    @MockBean
-    private SessionService sessionService;
+
 
     @Test
-    @WithMockUser(username = "loggedInUser")
+    @WithMockUser(username = "testUser")
     void createSurvey_Success() throws Exception {
+        // 1. Service 层模拟返回
         Map<String, Object> serviceResponse = new HashMap<>();
         serviceResponse.put("success", true);
         serviceResponse.put("message", "Survey created successfully");
         serviceResponse.put("surveyId", 123L);
-        when(surveyService.createSurvey(any(CreateSurveyRequest.class))).thenReturn(ResponseEntity.ok(serviceResponse));
+
+        // 当 surveyService.createSurvey(...) 被调用时，返回 200 + JSON
+        when(surveyService.createSurvey(any(CreateSurveyRequest.class)))
+                .thenReturn(ResponseEntity.ok(serviceResponse));
+
+        // 2. 用 mockMvc 模拟 HTTP POST 请求
+        //   注意，这里在请求体中包含了 sessionToken, surveyName, description
         mockMvc.perform(post("/survey/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"sessionToken\":\"test-token\",\"surveyName\":\"Test Survey\",\"description\":\"Just a test\"}"))
@@ -49,76 +56,62 @@ class SurveyControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Survey created successfully"))
                 .andExpect(jsonPath("$.surveyId").value(123L));
-        verify(surveyService, times(1)).createSurvey(any(CreateSurveyRequest.class));
+
+        // 3. 验证 service 是否被正确调用
+        verify(surveyService, times(1))
+                .createSurvey(any(CreateSurveyRequest.class));
     }
 
     @Test
-    @WithMockUser(username = "loggedInUser")
-    void createSurvey_MissingSurveyName() throws Exception {
-        Map<String, Object> serviceResponse = new HashMap<>();
-        serviceResponse.put("success", false);
-        serviceResponse.put("message", "Survey name is required.");
-        when(surveyService.createSurvey(any(CreateSurveyRequest.class))).thenReturn(ResponseEntity.badRequest().body(serviceResponse));
-        mockMvc.perform(post("/survey/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"sessionToken\":\"test-token\",\"description\":\"Just a test\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Survey name is required."));
-        verify(surveyService, times(1)).createSurvey(any(CreateSurveyRequest.class));
-    }
+    @WithMockUser(username = "testUser")
+    public void testUpdateQuestions_Success() throws Exception {
+        // Prepare a mocked service response.
+        Map<String, Object> serviceResponse = Map.of(
+                "success", true,
+                "message", "Questions updated successfully."
+        );
+        when(surveyService.updateQuestions(any(UpdateQuestionsRequest.class)))
+                .thenReturn(ResponseEntity.ok(serviceResponse));
 
-    @Test
-    @WithMockUser(username = "loggedInUser")
-    void getSurvey_Success() throws Exception {
-        when(sessionService.verifySession("valid-session-token")).thenReturn(true);
-        Map<String, Object> mockResponseBody = new HashMap<>();
-        List<Map<String, Object>> mockSurveys = new ArrayList<>();
-        Map<String, Object> s1 = new HashMap<>();
-        s1.put("id", 1);
-        s1.put("surveyName", "Survey A");
-        s1.put("description", "Desc A");
-        Map<String, Object> s2 = new HashMap<>();
-        s2.put("id", 2);
-        s2.put("surveyName", "Survey B");
-        s2.put("description", "Desc B");
-        mockSurveys.add(s1);
-        mockSurveys.add(s2);
-        mockResponseBody.put("surveys", mockSurveys);
-        when(surveyService.getAllSurveysForUser("valid-session-token")).thenReturn(ResponseEntity.ok(mockResponseBody));
-        mockMvc.perform(post("/survey/getSurvey")
+        // Prepare JSON request payload.
+        String jsonRequest = "{\"sessionToken\":\"valid-token\",\"surveyId\":\"1\",\"questions\":["
+                + "{\"description\":\"q1\",\"body\":\"q1body\"},"
+                + "{\"description\":\"q2\",\"body\":\"q2body\"}"
+                + "]}";
+
+        mockMvc.perform(post("/survey/update_questions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"sessionToken\":\"valid-session-token\"}"))
+                        .content(jsonRequest))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.surveys").exists())
-                .andExpect(jsonPath("$.surveys[0].id").value(1))
-                .andExpect(jsonPath("$.surveys[0].surveyName").value("Survey A"))
-                .andExpect(jsonPath("$.surveys[1].id").value(2))
-                .andExpect(jsonPath("$.surveys[1].surveyName").value("Survey B"));
-        verify(surveyService, times(1)).getAllSurveysForUser("valid-session-token");
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Questions updated successfully."));
+
+        // Verify that the controller delegated to the service.
+        verify(surveyService).updateQuestions(any(UpdateQuestionsRequest.class));
     }
 
     @Test
-    @WithMockUser(username = "loggedInUser")
-    void getSurvey_MissingSessionToken() throws Exception {
-        mockMvc.perform(post("/survey/getSurvey")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Session token is missing."));
-        verify(surveyService, never()).getAllSurveysForUser(any());
-    }
+    @WithMockUser(username = "testUser")
+    public void testGetSurvey_Success() throws Exception {
+        String sessionToken = "valid-session-token";
+        // Prepare a mocked service response.
+        Map<String, Object> serviceResponse = Map.of(
+                "surveys", new Object[] {
+                        Map.of("id", 1, "surveyName", "Survey A", "description", "Desc A"),
+                        Map.of("id", 2, "surveyName", "Survey B", "description", "Desc B")
+                }
+        );
+        when(surveyService.getAllSurveysForUser(sessionToken))
+                .thenReturn(ResponseEntity.ok(serviceResponse));
 
-    @Test
-    @WithMockUser(username = "loggedInUser")
-    void getSurvey_UnauthorizedSessionToken() throws Exception {
-        when(sessionService.verifySession("invalid-token")).thenReturn(false);
-        when(surveyService.getAllSurveysForUser("invalid-token")).thenReturn(ResponseEntity.status(401).body(Map.of("error","invalid")));
+        // Since the controller method accepts a raw String, we need to send a JSON string literal.
+
         mockMvc.perform(post("/survey/getSurvey")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"sessionToken\":\"invalid-token\"}"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Unauthorized or session expired."));
-        verify(surveyService, never()).getAllSurveysForUser("invalid-token");
+                        .content(sessionToken))
+                .andExpect(status().isOk());
+
+        // Verify that the controller delegated to the service.
+        verify(surveyService).getAllSurveysForUser(sessionToken);
     }
 }

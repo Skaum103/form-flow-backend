@@ -23,17 +23,19 @@ public class SurveyService {
     private final SurveyRepository surveyRepository;
     private final QuestionRepository questionRepository;
     private final SessionRepository sessionRepository;
+    private final SessionService sessionService;
 
     public SurveyService(
             UserRepository userRepository,
             SurveyRepository surveyRepository,
             QuestionRepository questionRepository,
-            SessionRepository sessionRepository
-    ) {
+            SessionRepository sessionRepository,
+            SessionService sessionService) {
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
         this.questionRepository = questionRepository;
         this.sessionRepository = sessionRepository;
+        this.sessionService = sessionService;
     }
 
     /**
@@ -53,7 +55,7 @@ public class SurveyService {
         Optional<Session> sessionOpt = sessionRepository.findBySessionToken(request.getSessionToken());
         if (sessionOpt.isEmpty()) {
             response.put("success", false);
-            response.put("message", "Session not found or invalid.");
+            response.put("message", "Unauthorized or session expired.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 
@@ -97,13 +99,18 @@ public class SurveyService {
     public ResponseEntity<Map<String, Object>> getAllSurveysForUser(String sessionToken) {
         Map<String, Object> response = new HashMap<>();
 
-        // 1. 根据 sessionToken 查找 Session
-        Optional<Session> sessionOpt = sessionRepository.findBySessionToken(sessionToken);
-        if (sessionOpt.isEmpty()) {
+        // 1. 校验 sessionToken 是否为空
+        if (sessionToken == null) {
             response.put("success", false);
-            response.put("message", "Session not found or invalid.");
+            response.put("message", "Session token is missing.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        if (!sessionService.verifySession(sessionToken)) {
+            response.put("success", false);
+            response.put("message", "Unauthorized or session expired.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
+        Optional<Session> sessionOpt = sessionRepository.findBySessionToken(sessionToken);
         Session session = sessionOpt.get();
 
         // 2. 获取 username，并查询 User
@@ -140,17 +147,15 @@ public class SurveyService {
         Map<String, Object> response = new HashMap<>();
 
         // 1. 校验 sessionToken 是否为空
-        if (request.getSessionToken() == null) {
+        String sessionToken = request.getSessionToken();
+        if (sessionToken == null) {
             response.put("success", false);
             response.put("message", "Session token is missing.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
-        // 2. 根据 sessionToken 查找 Session
-        Optional<Session> sessionOpt = sessionRepository.findBySessionToken(request.getSessionToken());
-        if (sessionOpt.isEmpty()) {
+        if (!sessionService.verifySession(sessionToken)) {
             response.put("success", false);
-            response.put("message", "Session not found or invalid.");
+            response.put("message", "Unauthorized or session expired.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 

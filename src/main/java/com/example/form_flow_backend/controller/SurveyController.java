@@ -14,38 +14,23 @@ import java.util.Map;
 public class SurveyController {
 
     private final SurveyService surveyService;
-    private final SessionService sessionService;
 
-    public SurveyController(SurveyService surveyService, SessionService sessionService) {
+    public SurveyController(SurveyService surveyService) {
         this.surveyService = surveyService;
-        this.sessionService = sessionService;
     }
 
     @PostMapping("/create")
     public ResponseEntity<?> createSurvey(@RequestBody CreateSurveyRequest request) {
-
         return surveyService.createSurvey(request);
     }
 
     @PostMapping("/update_questions")
     public ResponseEntity<?> updateQuestions(@RequestBody UpdateQuestionsRequest request) {
-        if (request.getSessionToken() == null || !sessionService.verifySession(request.getSessionToken())) {
-            return ResponseEntity.badRequest().body("Unauthorized");
-        }
         return surveyService.updateQuestions(request);
     }
 
     @PostMapping("/getSurvey")
-    public ResponseEntity<?> getSurvey(@RequestBody Map<String, String> requestBody) {
-        String sessionToken = requestBody.get("sessionToken");
-
-        if (sessionToken == null || sessionToken.isEmpty()) {
-            return ResponseEntity.badRequest().body("Session token is missing.");
-        }
-        if (!sessionService.verifySession(sessionToken)) {
-            return ResponseEntity.status(401).body("Unauthorized or session expired.");
-        }
-
+    public ResponseEntity<?> getSurvey(@RequestBody String sessionToken) {
         return surveyService.getAllSurveysForUser(sessionToken);
     }
 }

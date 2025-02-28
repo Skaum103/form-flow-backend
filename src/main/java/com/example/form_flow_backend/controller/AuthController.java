@@ -32,24 +32,11 @@ public class AuthController {
      * Login endpoint.
      * This method handles login requests but currently returns null.
      */
-    @PostMapping("/login")
-    @Operation(summary = "Login the user")
-    @ApiResponse(responseCode = "200", description = "Login success, will also return a session cookie")
-    @ApiResponse(responseCode = "401", description = "Credentials not correct")
-    public String login(@RequestBody String username, @RequestBody String password) {
-        return "Session";
-    }
 
     /**
      * Logout endpoint.
      * This method handles logout requests but currently returns null.
      */
-    @PostMapping("/logout")
-    @Operation(summary = "Login the user")
-    @ApiResponse(responseCode = "200", description = "Logout success, will deicard the session")
-    public String logout() {
-        return "Logout success";
-    }
 
     /**
      * Registers a new user.

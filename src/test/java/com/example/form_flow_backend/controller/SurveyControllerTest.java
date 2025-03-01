@@ -1,6 +1,7 @@
 package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
+import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.service.SessionService;
 import com.example.form_flow_backend.service.SurveyService;
@@ -113,5 +114,28 @@ public class SurveyControllerTest {
 
         // Verify that the controller delegated to the service.
         verify(surveyService).getAllSurveysForUser(sessionToken);
+    }
+
+    @Test
+    @WithMockUser(username = "testUser")
+    public void testGetSurveyDetail_Success() throws Exception {
+        String sessionToken = "valid-session-token";
+        // Prepare a mocked service response.
+        Map<String, Object> serviceResponse = Map.of(
+                "surveys", new Object[] {
+                        Map.of("id", 1, "type", "single", "question_order", "1", "description", "Desc A", "body", "Body A"),
+                }
+        );
+        when(surveyService.getSurveyDetail(any(GetSurveyDetailRequest.class)))
+                .thenReturn(ResponseEntity.ok(serviceResponse));
+
+        String jsonRequest = "{\"sessionToken\":\"valid-token\",\"surveyId\":\"1\"}";
+        mockMvc.perform(post("/survey/get_survey_detail")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        // Verify that the controller delegated to the service.
+        verify(surveyService).getSurveyDetail(any(GetSurveyDetailRequest.class));
     }
 }

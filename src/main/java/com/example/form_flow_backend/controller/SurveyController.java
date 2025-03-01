@@ -1,6 +1,7 @@
 package com.example.form_flow_backend.controller;
 
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
+import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.service.SessionService;
 import com.example.form_flow_backend.service.SurveyService;
@@ -32,5 +33,10 @@ public class SurveyController {
     @PostMapping("/getSurvey")
     public ResponseEntity<?> getSurvey(@RequestBody Map<String, String> request) {
         return surveyService.getAllSurveysForUser(request.get("sessionToken"));
+    }
+
+    @PostMapping("/get_survey_detail")
+    public ResponseEntity<?> getSurveyDetail(@RequestBody GetSurveyDetailRequest request) {
+        return surveyService.getSurveyDetail(request);
     }
 }

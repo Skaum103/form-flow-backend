@@ -1,6 +1,7 @@
 package com.example.form_flow_backend.service;
 
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
+import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.model.Question;
 import com.example.form_flow_backend.model.Session;
@@ -130,7 +131,7 @@ public class SurveyService {
         List<Map<String, Object>> surveyList = new ArrayList<>();
         for (Survey s : surveys) {
             Map<String, Object> surveyData = new HashMap<>();
-            surveyData.put("id", s.getId());
+            surveyData.put("surveyId", s.getId());
             surveyData.put("surveyName", s.getSurveyName());
             surveyData.put("description", s.getDescription());
             surveyList.add(surveyData);
@@ -192,6 +193,50 @@ public class SurveyService {
         // 6. 返回成功结果
         response.put("success", true);
         response.put("message", "Questions updated successfully.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<Map<String, Object>> getSurveyDetail(GetSurveyDetailRequest request) {
+        Map<String, Object> response = new HashMap<>();
+
+        // 1. 校验 sessionToken 是否为空
+        String sessionToken = request.getSessionToken();
+        if (sessionToken == null) {
+            response.put("success", false);
+            response.put("message", "Session token is missing.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        if (!sessionService.verifySession(sessionToken)) {
+            response.put("success", false);
+            response.put("message", "Unauthorized or session expired.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        // 3. 查找并校验 Survey
+        Long surveyId;
+        try {
+            surveyId = Long.valueOf(request.getSurveyId());
+        } catch (NumberFormatException e) {
+            response.put("success", false);
+            response.put("message", "Invalid survey ID.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        Optional<Survey> surveyOpt = surveyRepository.findById(surveyId);
+        if (surveyOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Survey not found in database.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        Optional<List<Question>> questionList = questionRepository.findBySurveyId(surveyId);
+        if (questionList.isPresent()) {
+            for (Question question : questionList.get()) {
+                question.setSurvey(null);
+            }
+        }
+        response.put("questions", questionList);
 
         return ResponseEntity.ok(response);
     }

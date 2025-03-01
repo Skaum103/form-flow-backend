@@ -105,10 +105,10 @@ public class SurveyControllerTest {
                 .thenReturn(ResponseEntity.ok(serviceResponse));
 
         // Since the controller method accepts a raw String, we need to send a JSON string literal.
-
+        String jsonSession = "{\"sessionToken\":\"" + sessionToken + "\"}";
         mockMvc.perform(post("/survey/getSurvey")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(sessionToken))
+                        .content(jsonSession))
                 .andExpect(status().isOk());
 
         // Verify that the controller delegated to the service.

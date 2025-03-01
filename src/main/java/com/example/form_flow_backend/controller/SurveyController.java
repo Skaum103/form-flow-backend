@@ -30,7 +30,7 @@ public class SurveyController {
     }
 
     @PostMapping("/getSurvey")
-    public ResponseEntity<?> getSurvey(@RequestBody String sessionToken) {
-        return surveyService.getAllSurveysForUser(sessionToken);
+    public ResponseEntity<?> getSurvey(@RequestBody Map<String, String> request) {
+        return surveyService.getAllSurveysForUser(request.get("sessionToken"));
     }
 }

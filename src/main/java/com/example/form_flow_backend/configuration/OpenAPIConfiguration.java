@@ -33,7 +33,7 @@ public class OpenAPIConfiguration {
         if (deployMode.equals("local")) {
             server.setUrl("http://localhost:8080/");
         } else {
-            server.setUrl("http://form-flow.us-east-1.elasticbeanstalk.com/");
+            server.setUrl("http://form-flow-be.us-east-1.elasticbeanstalk.com/");
         }
         server.setDescription("API Gateway Base URL");
 

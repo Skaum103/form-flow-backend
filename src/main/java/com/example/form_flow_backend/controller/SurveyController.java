@@ -42,6 +42,7 @@ public class SurveyController {
         System.out.println("just a test");
         System.out.println("just a test");
         System.out.println("just a test");
+        System.out.println("just a test");
         return surveyService.getSurveyDetail(request);
     }
 }

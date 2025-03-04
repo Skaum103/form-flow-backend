@@ -37,7 +37,7 @@ public class SurveyController {
 
     @PostMapping("/get_survey_detail")
     public ResponseEntity<?> getSurveyDetail(@RequestBody GetSurveyDetailRequest request) {
-        System.out.println("just a test");
+        //System.out.println("just a test");
         return surveyService.getSurveyDetail(request);
     }
 }

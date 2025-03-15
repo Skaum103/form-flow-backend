@@ -10,4 +10,5 @@ public class CreateSurveyRequest {
     private String sessionToken;
     private String surveyName;
     private String description;
+    private String accessControl;
 }

@@ -5,7 +5,7 @@ import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
 import com.example.form_flow_backend.model.*;
 import com.example.form_flow_backend.repository.*;
-import com.example.form_flow_backend.repository.Access.AccessRepositoryCustom;
+import com.example.form_flow_backend.repository.Access.AccessRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,14 +20,14 @@ public class SurveyService {
     private final QuestionRepository questionRepository;
     private final SessionRepository sessionRepository;
     private final SessionService sessionService;
-    private final AccessRepositoryCustom accessRepository;
+    private final AccessRepository accessRepository;
 
     public SurveyService(
             UserRepository userRepository,
             SurveyRepository surveyRepository,
             QuestionRepository questionRepository,
             SessionRepository sessionRepository,
-            SessionService sessionService, AccessRepositoryCustom accessRepository) {
+            SessionService sessionService, AccessRepository accessRepository) {
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
         this.questionRepository = questionRepository;
@@ -82,6 +82,28 @@ public class SurveyService {
 
         // 6. 保存到数据库
         Survey savedSurvey = surveyRepository.save(newSurvey);
+
+        // 7. 构造 access control
+        String[] accessesStrs = request.getAccessControl().split(",");
+        List<Access> accesses = new ArrayList<>();
+        if (accessesStrs[0].equals("-1")) {
+            Access access = new Access();
+            access.setSurvey(savedSurvey);
+            User universalUser = new User();
+            universalUser.setId(-1L);
+            access.setUser(universalUser);
+            accesses.add(access);
+        }
+        else {
+            List<User> accessibleUsers = userRepository.findAllById(Arrays.stream(accessesStrs).map(Long::valueOf).toList());
+            for (User accessibleUser : accessibleUsers) {
+                Access access = new Access();
+                access.setSurvey(savedSurvey);
+                access.setUser(accessibleUser);
+                accesses.add(access);
+            }
+        }
+        accessRepository.saveAll(accesses);
 
         // 7. 构造返回响应
         response.put("success", true);
@@ -274,9 +296,11 @@ public class SurveyService {
         for (Access access : accesses) {
             accessibleSurveyIds.add(access.getSurvey().getId());
         }
+        for (Survey survey : surveys) {
+            accessibleSurveyIds.remove(survey.getId());
+        }
 
         List<Survey> accessibleSurveyList = surveyRepository.findAllById(accessibleSurveyIds);
-
         surveys.addAll(accessibleSurveyList);
         response.put("surveys", surveys);
 

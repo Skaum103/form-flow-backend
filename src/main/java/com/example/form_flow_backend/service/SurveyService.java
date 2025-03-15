@@ -95,7 +95,7 @@ public class SurveyService {
             accesses.add(access);
         }
         else {
-            List<User> accessibleUsers = userRepository.findAllById(Arrays.stream(accessesStrs).map(Long::valueOf).toList());
+            List<User> accessibleUsers = userRepository.findByUsernameIn(Arrays.asList(accessesStrs));
             for (User accessibleUser : accessibleUsers) {
                 Access access = new Access();
                 access.setSurvey(savedSurvey);

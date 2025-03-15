@@ -39,4 +39,9 @@ public class SurveyController {
     public ResponseEntity<?> getSurveyDetail(@RequestBody GetSurveyDetailRequest request) {
         return surveyService.getSurveyDetail(request);
     }
+
+    @PostMapping("/get_accessible_survey")
+    public ResponseEntity<?> getAccessibleSurvey(@RequestBody Map<String, String> request) {
+        return surveyService.getAccessibleSurvey(request.get("sessionToken"));
+    }
 }

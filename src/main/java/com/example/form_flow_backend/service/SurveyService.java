@@ -3,14 +3,9 @@ package com.example.form_flow_backend.service;
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
 import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
-import com.example.form_flow_backend.model.Question;
-import com.example.form_flow_backend.model.Session;
-import com.example.form_flow_backend.model.Survey;
-import com.example.form_flow_backend.model.User;
-import com.example.form_flow_backend.repository.QuestionRepository;
-import com.example.form_flow_backend.repository.SessionRepository;
-import com.example.form_flow_backend.repository.SurveyRepository;
-import com.example.form_flow_backend.repository.UserRepository;
+import com.example.form_flow_backend.model.*;
+import com.example.form_flow_backend.repository.*;
+import com.example.form_flow_backend.repository.Access.AccessRepositoryCustom;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -25,18 +20,20 @@ public class SurveyService {
     private final QuestionRepository questionRepository;
     private final SessionRepository sessionRepository;
     private final SessionService sessionService;
+    private final AccessRepositoryCustom accessRepository;
 
     public SurveyService(
             UserRepository userRepository,
             SurveyRepository surveyRepository,
             QuestionRepository questionRepository,
             SessionRepository sessionRepository,
-            SessionService sessionService) {
+            SessionService sessionService, AccessRepositoryCustom accessRepository) {
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
         this.questionRepository = questionRepository;
         this.sessionRepository = sessionRepository;
         this.sessionService = sessionService;
+        this.accessRepository = accessRepository;
     }
 
     /**
@@ -237,6 +234,51 @@ public class SurveyService {
             }
         }
         response.put("questions", questionList);
+
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<Map<String, Object>> getAccessibleSurvey(String sessionToken) {
+        Map<String, Object> response = new HashMap<>();
+
+        // 1. 校验 sessionToken 是否为空
+        if (sessionToken == null) {
+            response.put("success", false);
+            response.put("message", "Session token is missing.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        if (!sessionService.verifySession(sessionToken)) {
+            response.put("success", false);
+            response.put("message", "Unauthorized or session expired.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        Optional<Session> sessionOpt = sessionRepository.findBySessionToken(sessionToken);
+        Session session = sessionOpt.get();
+
+        // 2. 获取 username，并查询 User
+        String username = session.getUsername();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "User not found in database.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        User user = userOpt.get();
+
+        // 3. 获取所有该 User 的 Survey
+        List<Survey> surveys = surveyRepository.findAllByUser(user);
+
+        // 4. 查询所有该 User 有权限访问的 Survey
+        List<Access> accesses = accessRepository.findAccessByUser(user);
+        List<Long> accessibleSurveyIds = new ArrayList<>();
+        for (Access access : accesses) {
+            accessibleSurveyIds.add(access.getSurvey().getId());
+        }
+
+        List<Survey> accessibleSurveyList = surveyRepository.findAllById(accessibleSurveyIds);
+
+        surveys.addAll(accessibleSurveyList);
+        response.put("surveys", surveys);
 
         return ResponseEntity.ok(response);
     }

@@ -7,6 +7,7 @@ import com.example.form_flow_backend.model.Question;
 import com.example.form_flow_backend.model.Session;
 import com.example.form_flow_backend.model.Survey;
 import com.example.form_flow_backend.model.User;
+import com.example.form_flow_backend.repository.Access.AccessRepository;
 import com.example.form_flow_backend.repository.QuestionRepository;
 import com.example.form_flow_backend.repository.SessionRepository;
 import com.example.form_flow_backend.repository.SurveyRepository;
@@ -38,6 +39,8 @@ class SurveyServiceTest {
     private SurveyService surveyService;
     @Mock
     private SessionService sessionService;
+    @Mock
+    private AccessRepository accessRepository;
 
     @BeforeEach
     void setUp() {
@@ -62,6 +65,7 @@ class SurveyServiceTest {
         request.setSessionToken("valid-session-token");
         request.setSurveyName("My First Survey");
         request.setDescription("Just a test.");
+        request.setAccessControl("-1");
         Session fakeSession = new Session();
         fakeSession.setSessionToken("valid-session-token");
         fakeSession.setUsername("testUser");
@@ -74,6 +78,7 @@ class SurveyServiceTest {
         savedSurvey.setId(100L);
         savedSurvey.setSurveyName("My First Survey");
         when(surveyRepository.save(any(Survey.class))).thenReturn(savedSurvey);
+        when(accessRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());

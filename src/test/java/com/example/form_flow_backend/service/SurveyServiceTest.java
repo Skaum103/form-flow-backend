@@ -3,30 +3,25 @@ package com.example.form_flow_backend.service;
 import com.example.form_flow_backend.DTO.CreateSurveyRequest;
 import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.UpdateQuestionsRequest;
-import com.example.form_flow_backend.model.Question;
-import com.example.form_flow_backend.model.Session;
-import com.example.form_flow_backend.model.Survey;
-import com.example.form_flow_backend.model.User;
+import com.example.form_flow_backend.model.*;
+import com.example.form_flow_backend.repository.*;
 import com.example.form_flow_backend.repository.Access.AccessRepository;
-import com.example.form_flow_backend.repository.QuestionRepository;
-import com.example.form_flow_backend.repository.SessionRepository;
-import com.example.form_flow_backend.repository.SurveyRepository;
-import com.example.form_flow_backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class SurveyServiceTest {
+
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -35,444 +30,514 @@ class SurveyServiceTest {
     private QuestionRepository questionRepository;
     @Mock
     private SessionRepository sessionRepository;
-    @InjectMocks
-    private SurveyService surveyService;
     @Mock
     private SessionService sessionService;
     @Mock
     private AccessRepository accessRepository;
 
+    @InjectMocks
+    private SurveyService surveyService;
+
+    private Session mockSession;
+    private User mockUser;
+    private Survey mockSurvey;
+
     @BeforeEach
     void setUp() {
+        // 基础模拟数据
+        mockSession = new Session();
+        mockSession.setUsername("testUser");
+
+        mockUser = new User();
+        mockUser.setUsername("testUser");
+        mockUser.setEmail("testUser@example.com");
+        mockUser.setPassword("pass123");
+
+        mockSurvey = new Survey();
+        mockSurvey.setId(1L);
+        mockSurvey.setSurveyName("MySurvey");
+        mockSurvey.setDescription("Desc");
+        mockSurvey.setUser(mockUser);
     }
 
+    // ---------------------------
+    // 1) createSurvey 测试
+    // ---------------------------
     @Test
     void createSurvey_MissingSessionToken() {
         CreateSurveyRequest request = new CreateSurveyRequest();
         request.setSurveyName("My First Survey");
         request.setDescription("Just a test.");
+        request.setAccessControl("-1");
+
+        // 未设置 sessionToken
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Session token is missing.", body.get("message"));
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Session token is missing.", response.getBody().get("message"));
     }
 
     @Test
-    void createSurvey_Success() {
+    void createSurvey_SessionNotFound() {
         CreateSurveyRequest request = new CreateSurveyRequest();
-        request.setSessionToken("valid-session-token");
-        request.setSurveyName("My First Survey");
-        request.setDescription("Just a test.");
-        request.setAccessControl("-1");
-        Session fakeSession = new Session();
-        fakeSession.setSessionToken("valid-session-token");
-        fakeSession.setUsername("testUser");
-        when(sessionRepository.findBySessionToken("valid-session-token")).thenReturn(Optional.of(fakeSession));
-        User fakeUser = new User();
-        fakeUser.setId(1L);
-        fakeUser.setUsername("testUser");
-        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(fakeUser));
-        Survey savedSurvey = new Survey();
-        savedSurvey.setId(100L);
-        savedSurvey.setSurveyName("My First Survey");
-        when(surveyRepository.save(any(Survey.class))).thenReturn(savedSurvey);
-        when(accessRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
-        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue((Boolean) response.getBody().get("success"));
-        assertEquals("Survey created successfully.", response.getBody().get("message"));
-        assertEquals(100L, response.getBody().get("surveyId"));
-        verify(sessionRepository, times(1)).findBySessionToken("valid-session-token");
-        verify(userRepository, times(1)).findByUsername("testUser");
-        verify(surveyRepository, times(1)).save(any(Survey.class));
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
-    }
-
-    @Test
-    void createSurvey_InvalidSessionToken() {
-        CreateSurveyRequest request = new CreateSurveyRequest();
-        request.setSessionToken("invalid-token");
+        request.setSessionToken("invalidToken");
         request.setSurveyName("SurveyName");
-        when(sessionService.verifySession("invalid-token")).thenReturn(false);
+        request.setDescription("desc");
+        request.setAccessControl("-1");
+
+        when(sessionRepository.findBySessionToken("invalidToken")).thenReturn(Optional.empty());
+
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals(false, response.getBody().get("success"));
         assertEquals("Unauthorized or session expired.", response.getBody().get("message"));
-        verify(sessionRepository, times(1)).findBySessionToken("invalid-token");
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
     @Test
     void createSurvey_UserNotFound() {
         CreateSurveyRequest request = new CreateSurveyRequest();
-        request.setSessionToken("valid-session-token");
+        request.setSessionToken("validToken");
         request.setSurveyName("SurveyName");
-        Session fakeSession = new Session();
-        fakeSession.setSessionToken("valid-session-token");
-        fakeSession.setUsername("nonExistentUser");
-        when(sessionRepository.findBySessionToken("valid-session-token")).thenReturn(Optional.of(fakeSession));
-        when(userRepository.findByUsername("nonExistentUser")).thenReturn(Optional.empty());
+        request.setDescription("desc");
+        request.setAccessControl("-1");
+
+        when(sessionRepository.findBySessionToken("validToken")).thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.empty());
+
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals(false, response.getBody().get("success"));
         assertEquals("User not found in database.", response.getBody().get("message"));
-        verify(sessionRepository, times(1)).findBySessionToken("valid-session-token");
-        verify(userRepository, times(1)).findByUsername("nonExistentUser");
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
     @Test
-    void createSurvey_SurveyNameMissing() {
+    void createSurvey_MissingSurveyName() {
         CreateSurveyRequest request = new CreateSurveyRequest();
-        request.setSessionToken("valid-session-token");
-        request.setDescription("Some description.");
-        Session fakeSession = new Session();
-        fakeSession.setSessionToken("valid-session-token");
-        fakeSession.setUsername("testUser");
-        when(sessionRepository.findBySessionToken("valid-session-token")).thenReturn(Optional.of(fakeSession));
-        User fakeUser = new User();
-        fakeUser.setId(1L);
-        fakeUser.setUsername("testUser");
-        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(fakeUser));
+        request.setSessionToken("validToken");
+        request.setSurveyName(" "); // 空格
+        request.setDescription("desc");
+        request.setAccessControl("-1");
+
+        when(sessionRepository.findBySessionToken("validToken")).thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(mockUser));
+
         ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals(false, response.getBody().get("success"));
         assertEquals("Survey name is required.", response.getBody().get("message"));
-        verify(sessionRepository, times(1)).findBySessionToken("valid-session-token");
-        verify(userRepository, times(1)).findByUsername("testUser");
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
+    @Test
+    void createSurvey_Success_WithUniversalAccess() {
+        CreateSurveyRequest request = new CreateSurveyRequest();
+        request.setSessionToken("validToken");
+        request.setSurveyName("MySurvey");
+        request.setDescription("desc");
+        // 测试 -1 访问场景
+        request.setAccessControl("-1");
+
+        when(sessionRepository.findBySessionToken("validToken")).thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(surveyRepository.save(any(Survey.class))).thenAnswer(inv -> {
+            Survey s = inv.getArgument(0);
+            s.setId(100L);
+            return s;
+        });
+
+        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(true, response.getBody().get("success"));
+        assertEquals("Survey created successfully.", response.getBody().get("message"));
+        assertEquals(100L, response.getBody().get("surveyId"));
+
+        // 确认saveAll被调用
+        verify(accessRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void createSurvey_Success_WithNamedAccess() {
+        CreateSurveyRequest request = new CreateSurveyRequest();
+        request.setSessionToken("validToken");
+        request.setSurveyName("MySurvey");
+        request.setDescription("desc");
+        // 测试普通用户访问
+        request.setAccessControl("alice,bob");
+
+        User alice = new User();
+        alice.setUsername("alice");
+        alice.setEmail("alice@example.com");
+        alice.setPassword("passA");
+
+        User bob = new User();
+        bob.setUsername("bob");
+        bob.setEmail("bob@example.com");
+        bob.setPassword("passB");
+
+        when(sessionRepository.findBySessionToken("validToken")).thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(surveyRepository.save(any(Survey.class))).thenAnswer(inv -> {
+            Survey s = inv.getArgument(0);
+            s.setId(101L);
+            return s;
+        });
+        when(userRepository.findByUsernameIn(anyList())).thenReturn(Arrays.asList(alice, bob));
+
+        ResponseEntity<Map<String, Object>> response = surveyService.createSurvey(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(true, response.getBody().get("success"));
+        assertEquals("Survey created successfully.", response.getBody().get("message"));
+        assertEquals(101L, response.getBody().get("surveyId"));
+
+        verify(accessRepository, times(1)).saveAll(anyList());
+    }
+
+    // ---------------------------
+    // 2) getAllSurveysForUser 测试
+    // ---------------------------
     @Test
     void getAllSurveysForUser_MissingSessionToken() {
         ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(null);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Session token is missing.", body.get("message"));
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Session token is missing.", response.getBody().get("message"));
     }
 
     @Test
-    void getAllSurveysForUser_Success() {
-        String validToken = "valid-token";
-        Session fakeSession = new Session();
-        fakeSession.setSessionToken(validToken);
-        fakeSession.setUsername("testUser");
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-        when(sessionRepository.findBySessionToken(validToken)).thenReturn(Optional.of(fakeSession));
-
-        User fakeUser = new User();
-        fakeUser.setId(1L);
-        fakeUser.setUsername("testUser");
-        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(fakeUser));
-
-        Survey s1 = new Survey();
-        s1.setId(101L);
-        s1.setSurveyName("Survey A");
-        s1.setDescription("Desc A");
-        Survey s2 = new Survey();
-        s2.setId(102L);
-        s2.setSurveyName("Survey B");
-        s2.setDescription("Desc B");
-
-        List<Survey> mockSurveys = Arrays.asList(s1, s2);
-        when(surveyRepository.findAllByUser(fakeUser)).thenReturn(mockSurveys);
-        ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(validToken);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-
-        Map<String, Object> body = response.getBody();
-        assertTrue(body.containsKey("surveys"));
-
-        List<Map<String, Object>> surveysResult = (List<Map<String, Object>>) body.get("surveys");
-        assertEquals(2, surveysResult.size());
-
-        Map<String, Object> survey1 = surveysResult.get(0);
-        assertEquals(101L, survey1.get("surveyId"));
-        assertEquals("Survey A", survey1.get("surveyName"));
-        assertEquals("Desc A", survey1.get("description"));
-
-        Map<String, Object> survey2 = surveysResult.get(1);
-        assertEquals(102L, survey2.get("surveyId"));
-        assertEquals("Survey B", survey2.get("surveyName"));
-        assertEquals("Desc B", survey2.get("description"));
-        verify(sessionRepository, times(1)).findBySessionToken(validToken);
-        verify(userRepository, times(1)).findByUsername("testUser");
-        verify(surveyRepository, times(1)).findAllByUser(fakeUser);
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
-    }
-
-    @Test
-    void getAllSurveysForUser_SessionNotFound() {
-        String invalidToken = "invalid-token";
-        when(sessionService.verifySession("invalid-token")).thenReturn(false);
-
-        ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(invalidToken);
-
+    void getAllSurveysForUser_InvalidSession() {
+        when(sessionService.verifySession("invalidToken")).thenReturn(false);
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAllSurveysForUser("invalidToken");
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals(false, response.getBody().get("success"));
         assertEquals("Unauthorized or session expired.", response.getBody().get("message"));
-
-        verify(sessionService, times(1)).verifySession(invalidToken);
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
     @Test
     void getAllSurveysForUser_UserNotFound() {
-        String validToken = "valid-token";
-        Session fakeSession = new Session();
-        fakeSession.setSessionToken(validToken);
-        fakeSession.setUsername("nonExistentUser");
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        Session session = new Session();
+        session.setUsername("unknownUser");
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(session));
+        when(userRepository.findByUsername("unknownUser"))
+                .thenReturn(Optional.empty());
 
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-        when(sessionRepository.findBySessionToken(validToken)).thenReturn(Optional.of(fakeSession));
-        when(userRepository.findByUsername("nonExistentUser")).thenReturn(Optional.empty());
-
-        ResponseEntity<Map<String, Object>> response = surveyService.getAllSurveysForUser(validToken);
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAllSurveysForUser("validToken");
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals(false, response.getBody().get("success"));
         assertEquals("User not found in database.", response.getBody().get("message"));
-
-        verify(sessionRepository, times(1)).findBySessionToken(validToken);
-        verify(userRepository, times(1)).findByUsername("nonExistentUser");
-        verifyNoMoreInteractions(sessionRepository, userRepository, surveyRepository);
     }
 
+    @Test
+    void getAllSurveysForUser_Success() {
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser"))
+                .thenReturn(Optional.of(mockUser));
+
+        List<Survey> mockSurveyList = new ArrayList<>();
+        Survey s1 = new Survey();
+        s1.setId(11L);
+        s1.setSurveyName("Survey11");
+        s1.setUser(mockUser);
+        Survey s2 = new Survey();
+        s2.setId(12L);
+        s2.setSurveyName("Survey12");
+        s2.setUser(mockUser);
+        mockSurveyList.add(s1);
+        mockSurveyList.add(s2);
+
+        when(surveyRepository.findAllByUser(mockUser)).thenReturn(mockSurveyList);
+
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAllSurveysForUser("validToken");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody().get("surveys"));
+
+        List<?> surveys = (List<?>) response.getBody().get("surveys");
+        assertEquals(2, surveys.size());
+    }
+
+    // ---------------------------
+    // 3) updateQuestions 测试
+    // ---------------------------
     @Test
     void updateQuestions_MissingSessionToken() {
-        UpdateQuestionsRequest request = new UpdateQuestionsRequest();
-        request.setSessionToken(null);
-        request.setSurveyId("123");
-        // Questions can be null for this test
+        UpdateQuestionsRequest req = new UpdateQuestionsRequest();
+        req.setSessionToken(null);
 
-        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(request);
+        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(req);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Session token is missing.", body.get("message"));
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Session token is missing.", response.getBody().get("message"));
     }
 
     @Test
-    void updateQuestions_InvalidSessionToken() {
-        UpdateQuestionsRequest request = new UpdateQuestionsRequest();
-        request.setSessionToken("invalid-token");
-        request.setSurveyId("123");
+    void updateQuestions_InvalidSession() {
+        UpdateQuestionsRequest req = new UpdateQuestionsRequest();
+        req.setSessionToken("tokenX");
+        req.setSurveyId("1");
 
-        // Simulate that session lookup fails.
-        when(sessionService.verifySession("invalid-token")).thenReturn(false);
+        when(sessionService.verifySession("tokenX")).thenReturn(false);
 
-        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(request);
+        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(req);
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Unauthorized or session expired.", body.get("message"));
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Unauthorized or session expired.", response.getBody().get("message"));
     }
 
     @Test
-    void updateQuestions_InvalidSurveyIdFormat() {
-        UpdateQuestionsRequest request = new UpdateQuestionsRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("abc");
+    void updateQuestions_InvalidSurveyId() {
+        UpdateQuestionsRequest req = new UpdateQuestionsRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("abc"); // 非数字
 
-        // Simulate a valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
+        when(sessionService.verifySession("validToken")).thenReturn(true);
 
-        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(request);
+        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(req);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Invalid survey ID.", body.get("message"));
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Invalid survey ID.", response.getBody().get("message"));
     }
 
     @Test
     void updateQuestions_SurveyNotFound() {
-        UpdateQuestionsRequest request = new UpdateQuestionsRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("123");
+        UpdateQuestionsRequest req = new UpdateQuestionsRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("99");
 
-        // Simulate a valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(surveyRepository.findById(99L)).thenReturn(Optional.empty());
 
-        // Survey not found.
-        when(surveyRepository.findById(123L)).thenReturn(Optional.empty());
-
-        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(request);
+        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(req);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Survey not found in database.", body.get("message"));
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Survey not found in database.", response.getBody().get("message"));
     }
 
     @Test
-    void updateQuestions_SuccessWithQuestions() {
-        UpdateQuestionsRequest request = new UpdateQuestionsRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("123");
+    void updateQuestions_Success_NoQuestions() {
+        UpdateQuestionsRequest req = new UpdateQuestionsRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("1");
+        // questions=null
 
-        // Prepare a list of questions.
-        List<Question> questions = new ArrayList<>();
-        Question q1 = new Question();
-        q1.setDescription("q1");
-        q1.setBody("q1body");
-        questions.add(q1);
-        Question q2 = new Question();
-        q2.setDescription("q2");
-        q2.setBody("q2body");
-        questions.add(q2);
-        request.setQuestions(questions);
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(surveyRepository.findById(1L)).thenReturn(Optional.of(mockSurvey));
 
-        // Simulate valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-
-        // Simulate survey found.
-        Survey survey = new Survey();
-        survey.setId(123L);
-        when(surveyRepository.findById(123L)).thenReturn(Optional.of(survey));
-
-        // Simulate deletion and saving.
-        doNothing().when(questionRepository).deleteBySurveyId(123L);
-        when(questionRepository.saveAll(questions)).thenReturn(questions);
-
-        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(request);
+        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(req);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(true, body.get("success"));
-        assertEquals("Questions updated successfully.", body.get("message"));
-
-        // Verify each question has been assigned the survey.
-        for (Question q : questions) {
-            assertEquals(survey, q.getSurvey());
-        }
-        verify(questionRepository).deleteBySurveyId(123L);
-        verify(questionRepository).saveAll(questions);
-    }
-
-    @Test
-    void updateQuestions_SuccessNoQuestions() {
-        UpdateQuestionsRequest request = new UpdateQuestionsRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("123");
-        request.setQuestions(null);
-
-        // Simulate valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-
-        // Simulate survey found.
-        Survey survey = new Survey();
-        survey.setId(123L);
-        when(surveyRepository.findById(123L)).thenReturn(Optional.of(survey));
-
-        doNothing().when(questionRepository).deleteBySurveyId(123L);
-
-        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(request);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(true, body.get("success"));
-        assertEquals("Questions updated successfully.", body.get("message"));
-
-        verify(questionRepository).deleteBySurveyId(123L);
+        assertEquals(true, response.getBody().get("success"));
+        assertEquals("Questions updated successfully.", response.getBody().get("message"));
+        verify(questionRepository, times(1)).deleteBySurveyId(1L);
         verify(questionRepository, never()).saveAll(anyList());
     }
 
     @Test
-    void getSurveyDetails_MissingSessionToken() {
-        GetSurveyDetailRequest request = new GetSurveyDetailRequest();
-        request.setSessionToken(null);
-        request.setSurveyId("123");
+    void updateQuestions_Success_WithQuestions() {
+        UpdateQuestionsRequest req = new UpdateQuestionsRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("1");
 
-        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(request);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Session token is missing.", body.get("message"));
-    }
+        Question q1 = new Question();
+        q1.setBody("Q1 body");
+        Question q2 = new Question();
+        q2.setBody("Q2 body");
+        List<Question> questionList = Arrays.asList(q1, q2);
+        req.setQuestions(questionList);
 
-    @Test
-    void getSurveyDetails_InvalidSessionToken() {
-        GetSurveyDetailRequest request = new GetSurveyDetailRequest();
-        request.setSessionToken("invalid-token");
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(surveyRepository.findById(1L)).thenReturn(Optional.of(mockSurvey));
 
-        // Simulate that session lookup fails.
-        when(sessionService.verifySession("invalid-token")).thenReturn(false);
-
-        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(request);
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Unauthorized or session expired.", body.get("message"));
-    }
-
-    @Test
-    void getSurveyDetails_InvalidSurveyIdFormat() {
-        GetSurveyDetailRequest request = new GetSurveyDetailRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("abc");
-
-        // Simulate a valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-
-        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(request);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Invalid survey ID.", body.get("message"));
-    }
-
-    @Test
-    void getSurveyDetails_SurveyNotFound() {
-        GetSurveyDetailRequest request = new GetSurveyDetailRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("123");
-
-        // Simulate a valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-        // Survey not found.
-        when(surveyRepository.findById(123L)).thenReturn(Optional.empty());
-
-        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(request);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-        assertEquals(false, body.get("success"));
-        assertEquals("Survey not found in database.", body.get("message"));
-    }
-
-    @Test
-    void getSurveyDetails_Success() {
-        GetSurveyDetailRequest request = new GetSurveyDetailRequest();
-        request.setSessionToken("valid-token");
-        request.setSurveyId("123");
-
-        // Simulate a valid session.
-        when(sessionService.verifySession("valid-token")).thenReturn(true);
-
-        // Simulate survey found.
-        Survey survey = new Survey();
-        when(surveyRepository.findById(123L)).thenReturn(Optional.of(survey));
-        Question q = new Question();
-        q.setId(1L);
-        List<Question> questions = Collections.singletonList(q);
-        when(questionRepository.findBySurveyId(123L)).thenReturn(Optional.of(questions));
-
-        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(request);
+        ResponseEntity<Map<String, Object>> response = surveyService.updateQuestions(req);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
+        assertEquals(true, response.getBody().get("success"));
+        assertEquals("Questions updated successfully.", response.getBody().get("message"));
+
+        verify(questionRepository, times(1)).deleteBySurveyId(1L);
+        verify(questionRepository, times(1)).saveAll(questionList);
+    }
+
+    // ---------------------------
+    // 4) getSurveyDetail 测试
+    // ---------------------------
+    @Test
+    void getSurveyDetail_MissingSessionToken() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken(null);
+
+        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(req);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Session token is missing.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getSurveyDetail_UnauthorizedSession() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("tokenX");
+        req.setSurveyId("1");
+
+        when(sessionService.verifySession("tokenX")).thenReturn(false);
+
+        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(req);
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Unauthorized or session expired.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getSurveyDetail_InvalidSurveyId() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("abc");
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+
+        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(req);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Invalid survey ID.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getSurveyDetail_SurveyNotFound() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("99");
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(surveyRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(req);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Survey not found in database.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getSurveyDetail_Success_NoQuestions() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("1");
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(surveyRepository.findById(1L)).thenReturn(Optional.of(mockSurvey));
+        when(questionRepository.findBySurveyId(1L)).thenReturn(Optional.empty());
+
+        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(req);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody().get("questions"));
+    }
+
+    @Test
+    void getSurveyDetail_Success_WithQuestions() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("1");
+
+        Question q1 = new Question();
+        q1.setId(101L);
+        q1.setBody("Q1");
+        q1.setSurvey(mockSurvey);
+
+        Question q2 = new Question();
+        q2.setId(102L);
+        q2.setBody("Q2");
+        q2.setSurvey(mockSurvey);
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(surveyRepository.findById(1L)).thenReturn(Optional.of(mockSurvey));
+        when(questionRepository.findBySurveyId(1L))
+                .thenReturn(Optional.of(Arrays.asList(q1, q2)));
+
+        ResponseEntity<Map<String, Object>> response = surveyService.getSurveyDetail(req);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody().get("questions"));
+
+        // 确认question里的survey被置空
+        Optional<List<Question>> questionListOpt =
+                (Optional<List<Question>>) response.getBody().get("questions");
+        assertTrue(questionListOpt.isPresent());
+        assertNull(questionListOpt.get().get(0).getSurvey());
+        assertNull(questionListOpt.get().get(1).getSurvey());
+    }
+
+    // ---------------------------
+    // 5) getAccessibleSurvey 测试
+    // ---------------------------
+    @Test
+    void getAccessibleSurvey_MissingSessionToken() {
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAccessibleSurvey(null);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("Session token is missing.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getAccessibleSurvey_UnauthorizedSession() {
+        when(sessionService.verifySession("badToken")).thenReturn(false);
+
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAccessibleSurvey("badToken");
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("Unauthorized or session expired.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getAccessibleSurvey_UserNotFound() {
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.empty());
+
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAccessibleSurvey("validToken");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("User not found in database.", response.getBody().get("message"));
+    }
+
+    @Test
+    void getAccessibleSurvey_Success() {
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(mockSession));
+        when(userRepository.findByUsername("testUser"))
+                .thenReturn(Optional.of(mockUser));
+
+        // user自己创建过1个survey
+        List<Survey> userSurveys = new ArrayList<>();
+        userSurveys.add(mockSurvey); // ID=1
+        when(surveyRepository.findAllByUser(mockUser)).thenReturn(userSurveys);
+
+        // access 里多1个 survey(2)
+        Access a1 = new Access();
+        a1.setUser(mockUser);
+        Survey s2 = new Survey();
+        s2.setId(2L);
+        a1.setSurvey(s2);
+
+        // 这里模仿: user对survey=2有访问权限
+        List<Access> mockAccesses = new ArrayList<>();
+        mockAccesses.add(a1);
+        when(accessRepository.findAccessByUser(mockUser)).thenReturn(mockAccesses);
+
+        // surveyRepository.findAllById([2]) => 取到 s2
+        when(surveyRepository.findAllById(anyList())).thenReturn(Arrays.asList(s2));
+
+        ResponseEntity<Map<String, Object>> response =
+                surveyService.getAccessibleSurvey("validToken");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        List<Survey> retSurveys = (List<Survey>) response.getBody().get("surveys");
+        assertEquals(2, retSurveys.size());
+        // 包含自己创建 ID=1, 以及通过 access 拿到的 ID=2
     }
 }

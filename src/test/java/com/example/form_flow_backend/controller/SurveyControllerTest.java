@@ -138,4 +138,24 @@ public class SurveyControllerTest {
         // Verify that the controller delegated to the service.
         verify(surveyService).getSurveyDetail(any(GetSurveyDetailRequest.class));
     }
+
+    @Test
+    @WithMockUser(username = "testUser")
+    public void testGetAccessibleSurveys() throws Exception {
+        String sessionToken = "valid-session-token";
+        // Prepare a mocked service response.
+        Map<String, Object> serviceResponse = Map.of(
+                "surveys", new Object[] {
+                        Map.of("id", 1, "type", "single", "question_order", "1", "description", "Desc A", "body", "Body A"),
+                }
+        );
+        when(surveyService.getSurveyDetail(any(GetSurveyDetailRequest.class)))
+                .thenReturn(ResponseEntity.ok(serviceResponse));
+
+        String jsonRequest = "{\"sessionToken\":\"valid-token\",\"surveyId\":\"1\"}";
+        mockMvc.perform(post("/survey/get_accessible_survey")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+    }
 }

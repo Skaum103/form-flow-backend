@@ -23,4 +23,9 @@ public class TakeController {
     public ResponseEntity<?> takeSurvey(@RequestBody TakeSurveyRequest request) {
         return takeService.takeSurvey(request);
     }
+
+    @PostMapping("/get_survey_stats")
+    public ResponseEntity<?> getSurveyTakeStatistics(@RequestBody GetSurveyDetailRequest request) {
+        return takeService.getSurveyTakeStatistics(request);
+    }
 }

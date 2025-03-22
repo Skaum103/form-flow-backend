@@ -288,7 +288,7 @@ public class SurveyService {
         User user = userOpt.get();
 
         // 3. 获取所有该 User 的 Survey
-        List<Survey> surveys = surveyRepository.findAllByUser(user);
+        List<Survey> userSurveys = surveyRepository.findAllByUser(user);
 
         // 4. 查询所有该 User 有权限访问的 Survey
         List<Access> accesses = accessRepository.findAccessByUser(user);
@@ -296,13 +296,23 @@ public class SurveyService {
         for (Access access : accesses) {
             accessibleSurveyIds.add(access.getSurvey().getId());
         }
-        for (Survey survey : surveys) {
+        for (Survey survey : userSurveys) {
             accessibleSurveyIds.remove(survey.getId());
         }
 
         List<Survey> accessibleSurveyList = surveyRepository.findAllById(accessibleSurveyIds);
-        surveys.addAll(accessibleSurveyList);
-        response.put("surveys", surveys);
+        userSurveys.addAll(accessibleSurveyList);
+
+        // 4. 构造返回结果
+        List<Map<String, Object>> surveyList = new ArrayList<>();
+        for (Survey s : userSurveys) {
+            Map<String, Object> surveyData = new HashMap<>();
+            surveyData.put("surveyId", s.getId());
+            surveyData.put("surveyName", s.getSurveyName());
+            surveyData.put("description", s.getDescription());
+            surveyList.add(surveyData);
+        }
+        response.put("surveys", surveyList);
 
         return ResponseEntity.ok(response);
     }

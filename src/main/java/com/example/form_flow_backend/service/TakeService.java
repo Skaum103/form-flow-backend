@@ -125,7 +125,7 @@ public class TakeService {
 
         for (int i = 0; i < surveyLen; i++) {
             TakesStatsDTO takesStatsDTO = new TakesStatsDTO();
-            takesStatsDTO.setQuestion_order(i);
+            takesStatsDTO.setQuestion_order(i+1);
             HashMap<String, Integer> takesStats = new HashMap<>();
             takesStatsDTO.setStats(takesStats);
             takesStatsDTOS.add(takesStatsDTO);

@@ -119,6 +119,12 @@ public class TakeService {
 
         // 3. Parse Takes
         List<Takes> takes = takesRepository.findTakesBySurveyId(surveyId);
+        if (takes.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "No takes found for this survey.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
         Takes takePeek = takes.getFirst();
         int surveyLen = takePeek.getAnswers().split(";").length;
         ArrayList<TakesStatsDTO> takesStatsDTOS = new ArrayList<>();
@@ -148,6 +154,7 @@ public class TakeService {
         }
 
         response.put("stats", takesStatsDTOS);
+        response.put("success", true);
         return ResponseEntity.ok(response);
     }
 }

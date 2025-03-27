@@ -1,5 +1,6 @@
 package com.example.form_flow_backend.service;
 
+import com.example.form_flow_backend.DTO.GetSurveyDetailRequest;
 import com.example.form_flow_backend.DTO.TakeSurveyRequest;
 import com.example.form_flow_backend.model.*;
 import com.example.form_flow_backend.repository.*;
@@ -147,4 +148,136 @@ class TakeServiceTest {
         // 验证数据是否被保存
         verify(takesRepository, times(1)).save(any(Takes.class));
     }
+
+
+    @Test
+    void testGetSurveyTakeStatistics_sessionTokenNull() {
+        // 构造请求, 不传 sessionToken
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSurveyId("123");
+
+        ResponseEntity<Map<String, Object>> response = takeService.getSurveyTakeStatistics(req);
+
+        assertEquals(400, response.getStatusCodeValue());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("Session token is missing.", response.getBody().get("message"));
+    }
+
+    @Test
+    void testGetSurveyTakeStatistics_sessionInvalid() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("invalid");
+        req.setSurveyId("123");
+
+        when(sessionService.verifySession("invalid")).thenReturn(false);
+
+        ResponseEntity<Map<String, Object>> response = takeService.getSurveyTakeStatistics(req);
+
+        assertEquals(401, response.getStatusCodeValue());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("Unauthorized or session expired.", response.getBody().get("message"));
+    }
+
+    @Test
+    void testGetSurveyTakeStatistics_invalidSurveyId() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("abc"); // 非数字
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+
+        // sessionRepository.findBySessionToken(...) 省略,若需要也可以Mock
+        ResponseEntity<Map<String, Object>> response = takeService.getSurveyTakeStatistics(req);
+
+        assertEquals(401, response.getStatusCodeValue());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("Unauthorized or session expired. (Session not found in DB)", response.getBody().get("message"));
+    }
+
+    @Test
+    void testGetSurveyTakeStatistics_noTakesFound() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("999");
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+
+        Session mockSession = new Session();
+        mockSession.setUsername("testUser");
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(mockSession));
+
+        // findTakesBySurveyId 返回空 => no takes found
+        when(takesRepository.findTakesBySurveyId(999L)).thenReturn(Collections.emptyList());
+
+        ResponseEntity<Map<String, Object>> response = takeService.getSurveyTakeStatistics(req);
+        assertEquals(400, response.getStatusCodeValue());
+        assertFalse((Boolean) response.getBody().get("success"));
+        assertEquals("No takes found for this survey.", response.getBody().get("message"));
+    }
+
+    @Test
+    void testGetSurveyTakeStatistics_success_singleChoice() {
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("888");
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+
+        Session mockSession = new Session();
+        mockSession.setUsername("testUser");
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(mockSession));
+
+        // 构造 Takes: "A;B" => 两题分别回答 "A", "B"
+        Takes t1 = new Takes();
+        t1.setAnswers("A;B");
+
+        Takes t2 = new Takes();
+        t2.setAnswers("A;C"); // 第2题回答"C"
+
+        List<Takes> allTakes = Arrays.asList(t1, t2);
+        when(takesRepository.findTakesBySurveyId(888L)).thenReturn(allTakes);
+
+        ResponseEntity<Map<String, Object>> response = takeService.getSurveyTakeStatistics(req);
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue((Boolean) response.getBody().get("success"));
+
+        // 拿到 stats
+        List<?> stats = (List<?>) response.getBody().get("stats");
+        assertEquals(2, stats.size()); // 2个question
+        // 你可继续断言 stats[0] 中A=2; stats[1] 中 B=1, C=1 等
+    }
+
+    @Test
+    void testGetSurveyTakeStatistics_success_multiChoice() {
+        // 测试第1题回答 "A,B" 多选
+        GetSurveyDetailRequest req = new GetSurveyDetailRequest();
+        req.setSessionToken("validToken");
+        req.setSurveyId("777");
+
+        when(sessionService.verifySession("validToken")).thenReturn(true);
+
+        Session mockSession = new Session();
+        mockSession.setUsername("testUser");
+        when(sessionRepository.findBySessionToken("validToken"))
+                .thenReturn(Optional.of(mockSession));
+
+        Takes t1 = new Takes();
+        // 第1题: "A,B"; 第2题: "X"
+        t1.setAnswers("A,B;X");
+
+        List<Takes> allTakes = Collections.singletonList(t1);
+        when(takesRepository.findTakesBySurveyId(777L)).thenReturn(allTakes);
+
+        ResponseEntity<Map<String, Object>> response = takeService.getSurveyTakeStatistics(req);
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue((Boolean) response.getBody().get("success"));
+
+        // 断言 stats
+        List<?> stats = (List<?>) response.getBody().get("stats");
+        assertEquals(2, stats.size());
+        // ...
+    }
+
 }

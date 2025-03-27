@@ -65,6 +65,35 @@ class TakeControllerTest {
                 .andExpect(jsonPath("$.message").value("Answers saved successfully."));
     }
 
+    @Test
+    void testGetSurveyTakeStatistics() throws Exception {
+        // 构造 mock 返回数据
+        Map<String, Object> mockBody = new HashMap<>();
+        mockBody.put("success", true);
+        mockBody.put("stats", "someStats");  // 示例: 你可改成一个列表或更复杂结构
+
+        ResponseEntity<Map<String, Object>> mockResponse = ResponseEntity.ok(mockBody);
+
+        // mock TakeService
+        when(takeService.getSurveyTakeStatistics(any()))
+                .thenReturn(mockResponse);
+
+        // 构造请求体
+        com.example.form_flow_backend.DTO.GetSurveyDetailRequest request =
+                new com.example.form_flow_backend.DTO.GetSurveyDetailRequest();
+        request.setSessionToken("token123");
+        request.setSurveyId("1");
+
+        // 发送 POST 请求并验证结果
+        mockMvc.perform(post("/take/get_survey_stats")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.stats").value("someStats")); // 与上面 mockBody 对应
+    }
+
+
     /**
      * 通过 @TestConfiguration + @Import 来向测试环境注入
      * 1) Mock 的 TakeService Bean
@@ -89,3 +118,5 @@ class TakeControllerTest {
         }
     }
 }
+
+

@@ -14,16 +14,22 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-
 @Service
 public class TakeService {
+
     private final TakesRepository takesRepository;
     private final SessionRepository sessionRepository;
     private final SessionService sessionService;
     private final UserRepository userRepository;
     private final SurveyRepository surveyRepository;
 
-    public TakeService(TakesRepository takesRepository, SessionRepository sessionRepository, SessionService sessionService, UserRepository userRepository, SurveyRepository surveyRepository) {
+    public TakeService(
+            TakesRepository takesRepository,
+            SessionRepository sessionRepository,
+            SessionService sessionService,
+            UserRepository userRepository,
+            SurveyRepository surveyRepository
+    ) {
         this.takesRepository = takesRepository;
         this.sessionRepository = sessionRepository;
         this.sessionService = sessionService;
@@ -41,16 +47,26 @@ public class TakeService {
             response.put("message", "Session token is missing.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
+        // 2. 验证 sessionToken 是否有效
         if (!sessionService.verifySession(sessionToken)) {
             response.put("success", false);
             response.put("message", "Unauthorized or session expired.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
+
+        // 3. 在数据库中找对应的 Session
         Optional<Session> sessionOpt = sessionRepository.findBySessionToken(sessionToken);
+        if (sessionOpt.isEmpty()) {
+            // 如果在数据库里也没找到这条 session 记录，就返回 401
+            response.put("success", false);
+            response.put("message", "Unauthorized or session expired. (Session not found in DB)");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
         Session session = sessionOpt.get();
 
-        // 3. 获取 username，并查询 User
-        String username = sessionOpt.get().getUsername();
+        // 4. 根据 username 找到对应的用户
+        String username = session.getUsername();
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isEmpty()) {
             response.put("success", false);
@@ -59,7 +75,7 @@ public class TakeService {
         }
         User user = userOpt.get();
 
-        // 3. 查找并校验 Survey
+        // 5. 校验 surveyId
         Long surveyId;
         try {
             surveyId = Long.valueOf(request.getSurveyId());
@@ -69,6 +85,7 @@ public class TakeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
+        // 6. 查询 Survey
         Optional<Survey> surveyOpt = surveyRepository.findById(surveyId);
         if (surveyOpt.isEmpty()) {
             response.put("success", false);
@@ -77,15 +94,17 @@ public class TakeService {
         }
         Survey survey = surveyOpt.get();
 
+        // 7. 保存 Takes
         Takes take = new Takes();
         take.setUser(user);
         take.setSurvey(survey);
         take.setAnswers(request.getAnswers());
 
         takesRepository.save(take);
+
+        // 8. 返回成功响应
         response.put("success", true);
         response.put("message", "Answers saved successfully.");
-
         return ResponseEntity.ok(response);
     }
 
@@ -99,15 +118,24 @@ public class TakeService {
             response.put("message", "Session token is missing.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
+        // 2. 验证 sessionToken 是否有效
         if (!sessionService.verifySession(sessionToken)) {
             response.put("success", false);
             response.put("message", "Unauthorized or session expired.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
+
+        // 3. 在数据库中找对应的 Session
         Optional<Session> sessionOpt = sessionRepository.findBySessionToken(sessionToken);
+        if (sessionOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Unauthorized or session expired. (Session not found in DB)");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
         Session session = sessionOpt.get();
 
-        // 2. 查找并校验 Survey
+        // 4. 校验 SurveyId
         Long surveyId;
         try {
             surveyId = Long.valueOf(request.getSurveyId());
@@ -117,7 +145,7 @@ public class TakeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // 3. Parse Takes
+        // 5. 查询 Takes
         List<Takes> takes = takesRepository.findTakesBySurveyId(surveyId);
         if (takes.isEmpty()) {
             response.put("success", false);
@@ -125,36 +153,38 @@ public class TakeService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        Takes takePeek = takes.getFirst();
-        int surveyLen = takePeek.getAnswers().split(";").length;
-        ArrayList<TakesStatsDTO> takesStatsDTOS = new ArrayList<>();
+        // 6. 计算回答的数量分布
+        Takes takePeek = takes.get(0); // 改成 get(0) 而不是 getFirst()
+        String[] peekSplit = takePeek.getAnswers().split(";");
+        int surveyLen = peekSplit.length;
 
+        ArrayList<TakesStatsDTO> takesStatsDTOS = new ArrayList<>();
         for (int i = 0; i < surveyLen; i++) {
             TakesStatsDTO takesStatsDTO = new TakesStatsDTO();
-            takesStatsDTO.setQuestion_order(i+1);
-            HashMap<String, Integer> takesStats = new HashMap<>();
-            takesStatsDTO.setStats(takesStats);
+            takesStatsDTO.setQuestion_order(i + 1);
+            takesStatsDTO.setStats(new HashMap<>());
             takesStatsDTOS.add(takesStatsDTO);
         }
 
-        for (Takes take : takes) {
-            String[] answers = take.getAnswers().split(";");
+        // 7. 填充统计
+        for (Takes singleTake : takes) {
+            String[] answers = singleTake.getAnswers().split(";");
             for (int i = 0; i < surveyLen; i++) {
-                String[] answer = answers[i].split(",");
-                TakesStatsDTO takesStatsDTO = takesStatsDTOS.get(i);
-                HashMap<String, Integer> takesStats = takesStatsDTO.getStats();
-                if (answer.length == 1) {
-                    takesStats.put(answer[0], takesStats.getOrDefault(answer[0], 0) + 1);
-                } else {
-                    for (String ans : answer) {
-                        takesStats.put(ans, takesStats.getOrDefault(ans, 0) + 1);
-                    }
+                String[] answerParts = answers[i].split(",");
+                TakesStatsDTO dto = takesStatsDTOS.get(i);
+
+                for (String ans : answerParts) {
+                    dto.getStats().put(
+                            ans,
+                            dto.getStats().getOrDefault(ans, 0) + 1
+                    );
                 }
             }
         }
 
-        response.put("stats", takesStatsDTOS);
+        // 8. 返回结果
         response.put("success", true);
+        response.put("stats", takesStatsDTOS);
         return ResponseEntity.ok(response);
     }
 }
